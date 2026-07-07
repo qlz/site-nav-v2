@@ -521,7 +521,7 @@
     body.dev-mode .locked { pointer-events: auto; color: #3f3934; }
     body.dev-mode .locked svg { opacity: 1; }
 
-    .viewer-shell { display: none; min-height: 100vh; padding: 22px; }
+    .viewer-shell { display: none; min-height: 100vh; padding: 18px 18px 0; }
     body.viewer-open .app-shell { display: none; }
     body.viewer-open .viewer-shell { display: grid; grid-template-rows: auto 1fr; gap: 16px; }
     .viewer-topbar {
@@ -541,13 +541,16 @@
     .version-select { min-height: 40px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.82); padding: 0 14px; color: #4f4944; max-width: 260px; }
     .version-note { color: var(--muted); font-size: 12px; }
     .viewer-frame-wrap {
-      border: 1px solid var(--line);
-      border-radius: 18px;
+      border-top: 1px solid var(--line);
+      border-left: 1px solid var(--line);
+      border-right: 1px solid var(--line);
+      border-bottom: 0;
+      border-radius: 18px 18px 0 0;
       overflow: hidden;
       background: white;
       box-shadow: var(--shadow);
     }
-    #viewerFrame { width: 100%; height: calc(100vh - 124px); border: 0; background: white; }
+    #viewerFrame { width: 100%; height: calc(100vh - 118px); border: 0; background: white; }
 
     .modal-backdrop {
       position: fixed;
@@ -628,11 +631,11 @@
       .chip { white-space: nowrap; padding: 0 18px; }
       .grid { grid-template-columns: 1fr; }
       .preview { height: 156px; }
-      .viewer-shell { padding: 10px; }
+      .viewer-shell { padding: 10px 10px 0; }
       .viewer-topbar { grid-template-columns: 1fr; }
       .viewer-actions { justify-content: stretch; }
       .viewer-actions .primary-btn, .viewer-actions .ghost-btn { flex: 1; }
-      #viewerFrame { height: calc(100vh - 190px); }
+      #viewerFrame { height: calc(100vh - 176px); }
       .review-grid { grid-template-columns: 1fr; }
       .modal { padding: 18px; }
     }
@@ -1336,7 +1339,7 @@
       }
     }
 
-    function openViewer(id) {
+    async function openViewer(id) {
       const item = state.destinations.find(x => x.id === id);
       if (!item) { showBanner('Select a project first.'); return; }
       const group = getGroup(item.group_id);
@@ -1345,7 +1348,7 @@
       el.viewerTitle.textContent = item.group_label || item.title;
       el.viewerAddress.textContent = [item.topic, item.subtopic, versionLabel(item)].filter(Boolean).join(' · ');
       el.openOriginal.href = item.url;
-      el.viewerFrame.src = item.url;
+      await loadViewerContent(item);
       item.last_accessed_at = new Date().toISOString();
       renderViewerVersionPicker(group, item.id);
       persistAll({ skipRemoteLocalOnly: true });
@@ -1381,6 +1384,27 @@
     function closeViewer() {
       document.body.classList.remove('viewer-open');
       el.viewerFrame.src = 'about:blank';
+      el.viewerFrame.srcdoc = '';
+    }
+
+    async function loadViewerContent(item) {
+      el.viewerFrame.src = 'about:blank';
+      el.viewerFrame.srcdoc = '';
+
+      if (!isHtmlLike(item)) {
+        el.viewerFrame.src = item.url;
+        return;
+      }
+
+      try {
+        const response = await fetch(item.url);
+        const html = await response.text();
+        if (!html.trim()) throw new Error('Empty HTML response');
+        el.viewerFrame.srcdoc = html;
+      } catch (error) {
+        console.warn(error);
+        el.viewerFrame.src = item.url;
+      }
     }
 
     function openEdit(groupId) {
@@ -1825,6 +1849,11 @@
       if (text.includes('check')) return 'checklist';
       if (text.includes('collection')) return 'collection';
       return 'portfolio';
+    }
+
+    function isHtmlLike(item) {
+      const value = `${item?.url || ''} ${item?.source_name || ''} ${item?.file_path || ''}`.toLowerCase();
+      return item?.mode === 'upload' || item?.type === 'HTML Files' || /\.html?(?:$|[?#])/.test(value);
     }
 
     function cssUrl(value) { return String(value || '').replace(/[\'"()]/g, encodeURIComponent); }
