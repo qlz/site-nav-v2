@@ -1,0 +1,1783 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Jenn Lee — Portfolio Navigator</title>
+  <meta name="description" content="My curated portfolio of projects and live websites. Many of these are still in development" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./config.js"></script>
+  <style>
+    :root {
+      --bg: #fbfaf8;
+      --paper: rgba(255,255,255,.82);
+      --paper-solid: #fffefd;
+      --ink: #171513;
+      --muted: #756f68;
+      --faint: #aaa39b;
+      --line: rgba(28, 24, 20, .11);
+      --line-strong: rgba(28, 24, 20, .18);
+      --shadow: 0 18px 50px rgba(40, 34, 28, .08), 0 2px 12px rgba(40, 34, 28, .07);
+      --shadow-soft: 0 10px 34px rgba(40, 34, 28, .07);
+      --radius: 18px;
+      --radius-sm: 12px;
+      --serif: Georgia, 'Times New Roman', Times, serif;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --green: #4f7f2f;
+      --orange: #d9822b;
+      --blue: #4d82c6;
+      --purple: #8a6ccf;
+      --danger: #9a3b2f;
+      --sidebar: 252px;
+      --right: 260px;
+      --top-pad: 70px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 25% -10%, #fff 0 34%, transparent 35%),
+        radial-gradient(circle at 85% 0%, rgba(230,224,216,.72), transparent 32%),
+        linear-gradient(135deg, #fbfaf8 0%, #f5f1eb 100%);
+      font-family: var(--sans);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: auto auto 24px -56px;
+      width: 300px;
+      height: 300px;
+      opacity: .34;
+      pointer-events: none;
+      background: repeating-radial-gradient(ellipse at center, transparent 0 13px, rgba(58,48,39,.10) 14px 15px, transparent 16px 29px);
+      border-radius: 999px;
+      filter: blur(.2px);
+      z-index: 0;
+    }
+
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+
+    .app-shell {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: var(--sidebar) minmax(0, 1fr) var(--right);
+      gap: 42px;
+      min-height: 100vh;
+      padding-right: 34px;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 48px 48px 32px;
+      border-right: 1px solid var(--line);
+      background: linear-gradient(90deg, rgba(255,255,255,.72), rgba(255,255,255,.38));
+      backdrop-filter: blur(16px);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand {
+      display: flex;
+      align-items: flex-start;
+      gap: 4px;
+      font-family: var(--serif);
+      font-size: 32px;
+      letter-spacing: -.055em;
+      line-height: .95;
+      margin-bottom: 42px;
+    }
+    .brand span { color: #b98a44; font-size: 18px; line-height: 1; padding-top: 2px; }
+    .rule { height: 1px; background: var(--line); width: 100%; margin: 0 0 26px; }
+    .nav-list { display: grid; gap: 4px; margin: 0 0 28px; }
+    .nav-link {
+      border: 0;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 0;
+      color: #36312c;
+      font-size: 14px;
+      text-align: left;
+    }
+    .nav-link.active::before {
+      content: "";
+      width: 7px; height: 7px;
+      background: var(--ink);
+      border-radius: 50%;
+    }
+    .nav-link:not(.active) { padding-left: 19px; color: #5d5650; }
+    .count-card {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      margin-top: 22px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .count-card strong {
+      min-width: 42px;
+      height: 42px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 999px;
+      background: rgba(255,255,255,.78);
+      border: 1px solid var(--line);
+      color: var(--ink);
+      box-shadow: 0 6px 20px rgba(30, 26, 21, .06);
+    }
+    .sidebar-footer { margin-top: auto; color: var(--muted); font-size: 12px; line-height: 1.8; }
+    .socials { display: flex; gap: 19px; margin-top: 26px; color: var(--ink); font-weight: 700; font-size: 14px; }
+
+    main { padding: var(--top-pad) 0 72px; min-width: 0; }
+    .hero {
+      max-width: 900px;
+      margin-bottom: 38px;
+    }
+    h1 {
+      font-family: var(--serif);
+      font-size: clamp(42px, 5.1vw, 72px);
+      line-height: .98;
+      letter-spacing: -.07em;
+      font-weight: 500;
+      max-width: 760px;
+      margin: 0 0 22px;
+    }
+    .dek {
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.75;
+      max-width: 590px;
+      margin: 0;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 22px;
+      align-items: center;
+      margin: 36px 0 34px;
+      flex-wrap: wrap;
+    }
+    .search-wrap {
+      position: relative;
+      flex: 1 1 360px;
+      max-width: 460px;
+    }
+    .search-wrap svg {
+      position: absolute;
+      top: 50%; left: 16px;
+      transform: translateY(-50%);
+      width: 18px; height: 18px;
+      color: var(--muted);
+    }
+    .search-wrap input {
+      width: 100%;
+      height: 48px;
+      border-radius: 12px;
+      border: 1px solid var(--line-strong);
+      background: rgba(255,255,255,.78);
+      padding: 0 58px 0 48px;
+      outline: none;
+      box-shadow: 0 6px 20px rgba(40,34,28,.035);
+    }
+    .kbd {
+      position: absolute;
+      right: 12px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--faint);
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 2px 7px;
+      font-size: 12px;
+      background: rgba(255,255,255,.7);
+    }
+    .filters { display: flex; gap: 10px; flex-wrap: wrap; }
+    .chip {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.58);
+      border-radius: 999px;
+      min-height: 38px;
+      padding: 0 24px;
+      color: #5f5850;
+      box-shadow: 0 4px 12px rgba(40,34,28,.025);
+    }
+    .chip.active { background: #2d2a27; color: white; border-color: #2d2a27; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 28px;
+      align-items: start;
+    }
+    .card {
+      position: relative;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: var(--shadow-soft);
+      min-width: 0;
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    }
+    .card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: rgba(28,24,20,.18); }
+    .card.dragging { opacity: .54; transform: scale(.98); }
+    .card.drop-hint { outline: 2px dashed rgba(30,26,22,.24); outline-offset: 5px; }
+    .browser-bar {
+      height: 22px;
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      padding-left: 12px;
+      background: #f4eee7;
+      border-bottom: 1px solid rgba(28,24,20,.08);
+    }
+    .dot { width: 6px; height: 6px; border-radius: 50%; opacity: .78; }
+    .dot:nth-child(1) { background: #d98b6c; }
+    .dot:nth-child(2) { background: #d8bb74; }
+    .dot:nth-child(3) { background: #79a56e; }
+    .preview {
+      height: 178px;
+      background: linear-gradient(135deg, #f5f1eb, #ffffff);
+      border-bottom: 1px solid var(--line);
+      position: relative;
+      overflow: hidden;
+    }
+    .preview.matcha { background: radial-gradient(circle at 77% 43%, rgba(234,239,218,.9) 0 22%, transparent 23%), linear-gradient(120deg, #263a22, #556b3d); color: white; }
+    .preview.flash { background: radial-gradient(circle at 72% 48%, #fff 0 20%, transparent 21%), linear-gradient(135deg, #fbf4e8, #fffaf2); }
+    .preview.workout { background: linear-gradient(135deg, #e9e4dd, #fbfaf8); }
+    .preview.smoothie { background: radial-gradient(circle at 75% 58%, #f49d8b 0 10%, transparent 11%), linear-gradient(135deg, #fff5e7, #f7e4cd); }
+    .preview.dark { background: linear-gradient(135deg, #0c1114, #1f2b33); color: white; }
+    .preview.portfolio { background: radial-gradient(circle at 78% 40%, #e8ded3 0 18%, transparent 19%), linear-gradient(135deg, #fff, #f1ebe4); }
+    .preview.collection { background: linear-gradient(135deg, #fffdf8, #eee7dd); }
+    .preview.checklist { background: linear-gradient(135deg, #f9f5ec, #fff); }
+    .preview.travel { background: linear-gradient(135deg, #476b75, #d5d4c9); color: white; }
+    .preview-inner { position: absolute; inset: 26px 28px; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
+    .mini-brand { font-size: 8px; font-weight: 700; letter-spacing: .02em; margin-bottom: 22px; opacity: .7; }
+    .preview h3 {
+      font-family: var(--serif);
+      font-size: 25px;
+      line-height: .96;
+      letter-spacing: -.055em;
+      margin: 0;
+      max-width: 220px;
+      font-weight: 600;
+    }
+    .preview p { margin: 10px 0 0; font-size: 9px; opacity: .68; max-width: 190px; line-height: 1.4; }
+    .preview .pill-mini { margin-top: 16px; border-radius: 999px; background: rgba(255,255,255,.74); color: #171513; padding: 7px 12px; font-size: 8px; font-weight: 700; }
+    .preview.matcha .pill-mini, .preview.dark .pill-mini, .preview.travel .pill-mini { background: rgba(255,255,255,.18); color: white; border: 1px solid rgba(255,255,255,.22); }
+    .card-body { padding: 16px 18px 18px; min-height: 112px; }
+    .meta {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: #736b64;
+      font-size: 12px;
+      margin-bottom: 9px;
+    }
+    .meta::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+    .meta.web::before { background: var(--orange); }
+    .meta.personal::before { background: var(--purple); }
+    .meta.ui::before { background: var(--blue); }
+    .card-title-row { display: flex; gap: 8px; align-items: center; }
+    .card-title {
+      border: 0;
+      background: transparent;
+      text-align: left;
+      padding: 0;
+      flex: 1;
+      font-family: var(--serif);
+      font-size: 19px;
+      line-height: 1.1;
+      letter-spacing: -.035em;
+      color: var(--ink);
+    }
+    .card-desc { margin: 8px 0 0; color: #69625c; font-size: 13px; line-height: 1.45; }
+    .icon-btn, .open-btn {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.8);
+      border-radius: 10px;
+      min-width: 38px;
+      height: 38px;
+      display: inline-grid;
+      place-items: center;
+      color: #4f4944;
+    }
+    .open-btn { padding: 0 18px; font-weight: 700; min-width: 78px; }
+    .more {
+      position: absolute;
+      right: 13px;
+      bottom: 60px;
+      border: 0;
+      background: transparent;
+      color: #514b45;
+      font-size: 22px;
+      line-height: 1;
+    }
+    body:not(.dev-mode) .more { display: none; }
+    body:not(.dev-mode) .card { cursor: default; }
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .tag-pill {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255,255,255,.62);
+      color: #625a53;
+      font-size: 11px;
+      line-height: 1;
+      padding: 5px 8px;
+    }
+    .status-dot {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 3;
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--green);
+      box-shadow: 0 0 0 3px rgba(255,255,255,.78);
+    }
+    .status-dot[data-status="under_construction"] { background: #d8bb74; }
+    .status-dot[data-status="broken"] { background: #c8745f; }
+    .preview.has-image {
+      background: var(--image-url) center / cover no-repeat;
+    }
+    .preview.has-image .preview-inner {
+      background: linear-gradient(180deg, rgba(255,255,255,.62), rgba(255,255,255,.88));
+      backdrop-filter: blur(2px);
+    }
+    .category-manager {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .category-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(250,248,245,.72);
+    }
+    .category-token {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.8);
+      color: #514b45;
+      font-size: 12px;
+    }
+    .category-token button {
+      border: 0;
+      background: transparent;
+      color: var(--danger);
+      font-weight: 800;
+      padding: 0;
+    }
+
+
+    .right-rail {
+      padding-top: 48px;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 28px;
+    }
+    .mode-toggle {
+      align-self: end;
+      width: 216px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      padding: 7px;
+      border-radius: 20px;
+      background: rgba(38, 32, 26, .09);
+      gap: 5px;
+      margin-bottom: 20px;
+    }
+    .mode-toggle button {
+      border: 0;
+      border-radius: 14px;
+      height: 42px;
+      background: transparent;
+      color: #756f68;
+      font-weight: 700;
+    }
+    .mode-toggle button.active { background: rgba(255,255,255,.92); color: var(--ink); box-shadow: 0 6px 18px rgba(30,26,22,.11); }
+    .status-chip {
+      align-self: end;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 18px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.75);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-soft);
+      color: #514b45;
+      font-size: 13px;
+      margin-bottom: 76px;
+    }
+    .status-chip::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+    .rail-card {
+      background: rgba(255,255,255,.75);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: var(--shadow-soft);
+      padding: 18px;
+    }
+    .rail-title {
+      display: flex; justify-content: space-between; align-items: center;
+      font-weight: 800; font-size: 14px; margin-bottom: 12px;
+    }
+    .tool-list { display: grid; gap: 4px; }
+    .tool-button {
+      border: 0;
+      background: transparent;
+      min-height: 36px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+      border-radius: 10px;
+      color: #3f3934;
+      padding: 0 2px;
+    }
+    .tool-button svg { width: 16px; height: 16px; color: #514b45; }
+    .tool-button:hover { background: rgba(30,26,22,.045); padding-left: 8px; }
+    .tool-button.locked { color: var(--faint); pointer-events: none; }
+    .tool-button.locked svg { opacity: .36; }
+    .add-panel { display: grid; gap: 12px; margin-top: 14px; border-top: 1px solid var(--line); padding-top: 14px; }
+    .field { display: grid; gap: 6px; }
+    .field label { color: var(--muted); font-size: 12px; }
+    .field input, .field select, .field textarea {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(255,255,255,.78);
+      min-height: 40px;
+      padding: 10px 12px;
+      outline: none;
+      width: 100%;
+    }
+    .field textarea { min-height: 78px; resize: vertical; }
+    .primary-btn, .ghost-btn, .danger-btn {
+      border-radius: 999px;
+      min-height: 40px;
+      padding: 0 18px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.8);
+      font-weight: 750;
+    }
+    .primary-btn { background: #25221f; color: white; border-color: #25221f; }
+    .danger-btn { color: var(--danger); }
+    .banner {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 15px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255,255,255,.76);
+      color: #5c554f;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 24px rgba(30,26,22,.045);
+    }
+    .banner.visible { display: flex; }
+    .banner::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex: 0 0 auto; }
+    .empty-state {
+      display: none;
+      border: 1px dashed var(--line-strong);
+      border-radius: var(--radius);
+      padding: 42px;
+      background: rgba(255,255,255,.52);
+      color: var(--muted);
+      text-align: center;
+    }
+    .empty-state.visible { display: block; }
+
+    [data-dev-only] { display: none !important; }
+    body.dev-mode [data-dev-only] { display: revert !important; }
+    body.dev-mode .add-panel { display: grid !important; }
+    body.dev-mode .locked { pointer-events: auto; color: #3f3934; }
+    body.dev-mode .locked svg { opacity: 1; }
+
+    .viewer-shell { display: none; min-height: 100vh; padding: 22px; }
+    body.viewer-open .app-shell { display: none; }
+    body.viewer-open .viewer-shell { display: grid; grid-template-rows: auto 1fr; gap: 16px; }
+    .viewer-topbar {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255,255,255,.78);
+      box-shadow: var(--shadow-soft);
+      padding: 14px 16px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 16px;
+    }
+    .viewer-title { font-family: var(--serif); font-size: 24px; letter-spacing: -.04em; margin: 0; }
+    .viewer-address { margin: 3px 0 0; color: var(--muted); font-size: 13px; word-break: break-all; }
+    .viewer-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: end; }
+    .viewer-frame-wrap {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      overflow: hidden;
+      background: white;
+      box-shadow: var(--shadow);
+    }
+    #viewerFrame { width: 100%; height: calc(100vh - 124px); border: 0; background: white; }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(28, 24, 20, .28);
+      backdrop-filter: blur(10px);
+    }
+    .modal-backdrop.visible { display: flex; }
+    .modal {
+      width: min(720px, 100%);
+      max-height: 90vh;
+      overflow: auto;
+      background: rgba(255,255,255,.94);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: 0 30px 90px rgba(28,24,20,.22);
+      padding: 24px;
+    }
+    .modal h2 { font-family: var(--serif); font-size: 32px; letter-spacing: -.055em; margin: 0 0 8px; }
+    .modal p { color: var(--muted); line-height: 1.6; margin: 0 0 18px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; margin-top: 20px; }
+    .review-list { display: grid; gap: 12px; margin-top: 16px; }
+    .review-item {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      background: rgba(250,248,245,.8);
+      display: grid;
+      gap: 10px;
+    }
+    .review-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+
+    .visually-hidden { position: absolute !important; clip: rect(1px,1px,1px,1px); width: 1px; height: 1px; overflow: hidden; white-space: nowrap; }
+
+    @media (max-width: 1280px) {
+      :root { --sidebar: 220px; --right: 230px; }
+      .app-shell { gap: 28px; padding-right: 24px; }
+      .sidebar { padding: 42px 34px 30px; }
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .status-chip { margin-bottom: 52px; }
+    }
+
+    @media (max-width: 980px) {
+      .app-shell { grid-template-columns: 1fr; padding: 18px; gap: 0; }
+      .sidebar {
+        position: relative;
+        height: auto;
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        padding: 20px;
+        margin-bottom: 22px;
+      }
+      .brand { margin-bottom: 18px; }
+      .rule, .sidebar-footer { display: none; }
+      .nav-list { display: flex; flex-wrap: wrap; margin: 0; }
+      .nav-link, .nav-link:not(.active) { padding: 10px 12px; border-radius: 999px; background: rgba(255,255,255,.55); }
+      .count-card { margin-top: 14px; }
+      main { padding: 20px 0 0; }
+      .right-rail { order: -1; padding-top: 0; margin-bottom: 18px; gap: 12px; }
+      .mode-toggle, .status-chip { align-self: stretch; width: 100%; margin: 0; }
+      .rail-card { display: none; }
+      body.dev-mode .rail-card { display: block; }
+      .grid { gap: 18px; }
+    }
+
+    @media (max-width: 680px) {
+      .app-shell { padding: 12px; }
+      h1 { font-size: 42px; }
+      .dek { font-size: 15px; }
+      .toolbar { gap: 14px; margin: 26px 0 22px; }
+      .search-wrap { flex-basis: 100%; max-width: none; }
+      .filters { width: 100%; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
+      .chip { white-space: nowrap; padding: 0 18px; }
+      .grid { grid-template-columns: 1fr; }
+      .preview { height: 156px; }
+      .viewer-shell { padding: 10px; }
+      .viewer-topbar { grid-template-columns: 1fr; }
+      .viewer-actions { justify-content: stretch; }
+      .viewer-actions .primary-btn, .viewer-actions .ghost-btn { flex: 1; }
+      #viewerFrame { height: calc(100vh - 190px); }
+      .review-grid { grid-template-columns: 1fr; }
+      .modal { padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="navigatorApp" class="app-shell">
+    <aside class="sidebar" aria-label="Site navigation">
+      <a class="brand" href="#top" aria-label="Jenn Lee home">Jenn Lee<span>✦</span></a>
+      <div class="rule"></div>
+      <nav class="nav-list">
+        <button class="nav-link active" data-jump="top">Home</button>
+        <button class="nav-link" data-jump="portfolio">Portfolio</button>
+        <a class="nav-link" href="https://www.linkedin.com/in/jennifer-lee-95154328/" target="_blank" rel="noopener">Resume</a>
+      </nav>
+      <div class="rule"></div>
+      <div class="count-card"><strong id="routeCount">0</strong><span>projects</span></div>
+      <div class="sidebar-footer">
+        <div>© 2026 Jenn Lee</div>
+        <div>All rights reserved.</div>
+        <div class="socials" aria-label="Social links">
+          <span>♥</span>
+          <a href="https://github.com/qlz/" target="_blank" rel="noopener" aria-label="GitHub">GH</a>
+          <a href="https://www.linkedin.com/in/jennifer-lee-95154328/" target="_blank" rel="noopener" aria-label="LinkedIn">in</a>
+        </div>
+      </div>
+    </aside>
+
+    <main id="top">
+      <section class="hero" id="intro">
+        <h1>I'm building some things for fun :)</h1>
+        <p class="dek">My curated portfolio of projects and live websites. Many of these are still in development</p>
+      </section>
+
+      <div id="statusBanner" class="banner" role="status"></div>
+
+      <section id="portfolio" aria-label="Portfolio library">
+        <div class="toolbar">
+          <label class="search-wrap" for="searchInput">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+            <input id="searchInput" type="search" placeholder="Search projects..." autocomplete="off" />
+            <span class="kbd">⌘ K</span>
+          </label>
+          <div id="filters" class="filters" aria-label="Project filters"></div>
+        </div>
+
+        <div id="emptyState" class="empty-state">
+          <h2>No projects found</h2>
+          <p>Try a different search or add a destination in development mode.</p>
+        </div>
+        <div id="siteGrid" class="grid" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <aside class="right-rail" aria-label="Navigator controls">
+      <div class="mode-toggle" aria-label="Mode switcher">
+        <button id="showcaseModeBtn" class="active" type="button">Showcase</button>
+        <button id="devModeBtn" type="button">Dev</button>
+      </div>
+      <div id="modeStatus" class="status-chip">Mode: Showcase</div>
+
+      <section class="rail-card">
+        <div class="rail-title"><span>Navigator Tools</span><span>⌃</span></div>
+        <div class="tool-list">
+          <button class="tool-button" data-action="backTop" type="button">⌾ <span>Back to top</span></button>
+          <button class="tool-button" data-dev-only data-action="upload" type="button">⇧ <span>Upload HTML</span></button>
+          <button class="tool-button" data-dev-only data-action="focusAdd" type="button">↗ <span>Add Link</span></button>
+          <button class="tool-button" data-dev-only data-action="editSelected" type="button">✎ <span>Edit selected</span></button>
+          <button class="tool-button" data-dev-only data-action="manageCategories" type="button">◌ <span>Categories</span></button>
+          <button class="tool-button" data-dev-only data-action="review" type="button">□ <span>Organize</span></button>
+          <button class="tool-button" data-action="openSelected" type="button">▣ <span>Viewer</span></button>
+          <button class="tool-button" data-action="focusSearch" type="button">⌕ <span>Search</span></button>
+        </div>
+      </section>
+
+      <section class="rail-card">
+        <div class="rail-title"><span>Dev Tools</span><span>▧</span></div>
+        <div class="tool-list">
+          <button class="tool-button locked" data-dev-only data-action="clearState" type="button">☒ <span>Clear state</span></button>
+          <button class="tool-button locked" data-dev-only data-action="sync" type="button">↻ <span>Sync Supabase</span></button>
+          <button class="tool-button locked" data-dev-only data-action="review" type="button">◇ <span>Review uploads</span></button>
+          <button class="tool-button locked" data-dev-only data-action="manageCategories" type="button">◌ <span>Manage categories</span></button>
+        </div>
+
+        <form id="addForm" class="add-panel" data-dev-only>
+          <div class="field">
+            <label for="newTitle">Display name</label>
+            <input id="newTitle" required placeholder="Matcha Tracker" />
+          </div>
+          <div class="field">
+            <label for="newUrl">URL</label>
+            <input id="newUrl" required type="url" placeholder="https://example.com" />
+          </div>
+          <div class="field">
+            <label for="newCategory">Category tag</label>
+            <input id="newCategory" list="categoryOptions" placeholder="Matcha" />
+            <datalist id="categoryOptions">
+              <option value="Matcha"></option>
+              <option value="AI Learning"></option>
+              <option value="Web Design"></option>
+              <option value="Tools"></option>
+            </datalist>
+          </div>
+          <div class="field">
+            <label for="newDescription">Description</label>
+            <textarea id="newDescription" placeholder="Short description for this project"></textarea>
+          </div>
+          <div class="field">
+            <label for="newStatus">Status</label>
+            <select id="newStatus">
+              <option value="working">Working</option>
+              <option value="under_construction">Under construction</option>
+              <option value="broken">Broken</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="newImageUrl">Preview image URL</label>
+            <input id="newImageUrl" type="url" placeholder="https://example.com/preview.png" />
+          </div>
+          <div class="field">
+            <label for="newImageFile">Preview image upload</label>
+            <input id="newImageFile" type="file" accept="image/*" />
+          </div>
+          <div class="field">
+            <label for="newTopic">Topic</label>
+            <input id="newTopic" placeholder="Tooling" />
+          </div>
+          <div class="field">
+            <label for="newSubtopic">Subtopic</label>
+            <input id="newSubtopic" placeholder="Food" />
+          </div>
+          <button class="primary-btn" type="submit">Save Link</button>
+          <label class="ghost-btn" style="display:grid;place-items:center;">
+            Upload HTML
+            <input id="panelUploadInput" class="visually-hidden" type="file" accept=".html,text/html" multiple />
+          </label>
+        </form>
+      </section>
+    </aside>
+  </div>
+
+  <section class="viewer-shell" aria-label="Viewer mode">
+    <header class="viewer-topbar">
+      <button id="backToNavigator" class="ghost-btn" type="button">← Back to Navigator</button>
+      <div>
+        <h2 id="viewerTitle" class="viewer-title">Viewer</h2>
+        <p id="viewerAddress" class="viewer-address"></p>
+      </div>
+      <div class="viewer-actions">
+        <a id="openOriginal" class="primary-btn" href="#" target="_blank" rel="noopener">Open Original</a>
+      </div>
+    </header>
+    <div class="viewer-frame-wrap"><iframe id="viewerFrame" title="Embedded page viewer" sandbox="allow-same-origin allow-scripts allow-forms allow-popups"></iframe></div>
+  </section>
+
+  <input id="topbarUploadInput" class="visually-hidden" type="file" accept=".html,text/html" multiple />
+
+  <div id="editModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+    <div class="modal">
+      <h2 id="editTitle">Edit project</h2>
+      <p>Update the project card. For uploaded HTML files, changing the display name does not rename or modify the original upload.</p>
+      <form id="editForm">
+        <div class="review-grid">
+          <label class="field"><span>Display name</span><input id="editName" required /></label>
+          <label class="field"><span>URL</span><input id="editUrl" type="url" /></label>
+          <label class="field"><span>Status</span><select id="editStatus"><option value="working">Working</option><option value="under_construction">Under construction</option><option value="broken">Broken</option></select></label>
+        </div>
+        <div class="field" style="margin-top:12px;">
+          <label for="editDescription">Description</label>
+          <textarea id="editDescription"></textarea>
+        </div>
+        <div class="review-grid" style="margin-top:12px;">
+          <label class="field"><span>Categories</span><input id="editCategories" list="categoryOptions" placeholder="Matcha, AI Learning" /></label>
+          <label class="field"><span>Topic</span><input id="editTopic" /></label>
+          <label class="field"><span>Subtopic</span><input id="editSubtopic" /></label>
+        </div>
+        <div class="review-grid" style="margin-top:12px;">
+          <label class="field"><span>Preview image URL</span><input id="editImageUrl" type="url" placeholder="https://example.com/preview.png" /></label>
+          <label class="field"><span>Upload preview image</span><input id="editImageFile" type="file" accept="image/*" /></label>
+          <label class="field"><span>Type</span><input id="editType" placeholder="Live Links" /></label>
+        </div>
+        <div class="modal-actions">
+          <button class="ghost-btn" type="button" data-close-modal="editModal">Cancel</button>
+          <button class="primary-btn" type="submit">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="categoryModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="categoryTitle">
+    <div class="modal">
+      <h2 id="categoryTitle">Manage categories</h2>
+      <p>Add or remove category tags. Removing a category also removes it from saved project cards.</p>
+      <form id="categoryForm" class="category-manager">
+        <div class="field">
+          <label for="categoryNameInput">New category</label>
+          <input id="categoryNameInput" placeholder="AI Learning" />
+        </div>
+        <button class="primary-btn" type="submit">Add Category</button>
+      </form>
+      <div id="categoryList" class="category-list" aria-live="polite"></div>
+      <div class="modal-actions">
+        <button class="ghost-btn" type="button" data-close-modal="categoryModal">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="reviewModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="reviewTitle">
+    <div class="modal">
+      <h2 id="reviewTitle">Review uploads</h2>
+      <p>Suggested classifications are based on file names. Adjust category, topic, and subtopic before saving.</p>
+      <div id="reviewList" class="review-list"></div>
+      <div class="modal-actions">
+        <button id="reviewLaterBtn" class="ghost-btn" type="button">Review Later</button>
+        <button id="acceptSuggestionsBtn" class="ghost-btn" type="button">Accept Suggestions</button>
+        <button id="savePlacementsBtn" class="primary-btn" type="button">Save Placements</button>
+      </div>
+    </div>
+  </div>
+
+  <template id="cardTemplate">
+    <article class="card" draggable="true">
+      <div class="browser-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+      <div class="preview"><div class="preview-inner"><div class="mini-brand">Portfolio</div><h3></h3><p></p><span class="pill-mini">Open</span></div></div>
+      <span class="status-dot" title="Status"></span>
+      <button class="more" title="More actions" type="button">⋮</button>
+      <div class="card-body">
+        <div class="meta"></div>
+        <div class="card-title-row">
+          <button class="card-title" type="button"></button>
+          <button class="icon-btn" title="Open original" type="button">↗</button>
+        </div>
+        <p class="card-desc"></p>
+        <div class="tag-row"></div>
+      </div>
+    </article>
+  </template>
+
+  <script>
+    /*
+      Supabase setup
+      This file is wired to your existing schema:
+      - public.routes stores portfolio destinations.
+      - public.taxonomy stores topic/subtopic options.
+      - storage bucket uploads stores uploaded HTML files.
+
+      Config loading:
+      - Local development: run `npm start`. The local server reads `.env` and
+        serves `/config.js`, which defines window.ENV.
+      - GitHub Pages: the included GitHub Actions workflow generates `config.js`
+        from repository secrets before deploying.
+
+      Do not hardcode secrets in this HTML file. Supabase anon keys are public
+      frontend keys, but keeping them in `.env` / GitHub Secrets makes local and
+      deploy config easier to manage.
+
+      Dev mode is password-gated with DEV_PASSWORD and is the only place where
+      add, upload, rename, organize, sync, and clear-state controls appear.
+    */
+
+    const ENV = window.ENV || {};
+    const SUPABASE_URL = ENV.SUPABASE_URL || '';
+    const SUPABASE_ANON_KEY = ENV.SUPABASE_ANON_KEY || '';
+    const ROUTES_TABLE = 'routes';
+    const TAXONOMY_TABLE = 'taxonomy';
+    const CATEGORIES_TABLE = 'categories';
+    const ROUTE_CATEGORIES_TABLE = 'route_categories';
+    const UPLOAD_BUCKET = 'uploads';
+    const DEV_PASSWORD = 'devv';
+
+    const supabaseReady = SUPABASE_URL.includes('supabase.co') && !SUPABASE_URL.includes('YOUR_PROJECT_ID') && !SUPABASE_ANON_KEY.includes('YOUR_');
+    const sb = supabaseReady ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+    const storageKey = 'jenn:portfolio-routes:v2';
+    const devKey = 'jenn:portfolio-dev-mode:v1';
+    const pendingKey = 'jenn:portfolio-pending-review:v1';
+
+    const seedDestinations = [
+      { id: uid(), title: 'Matcha Tracker', url: 'https://example.com/matcha-tracker', type: 'HTML Files', topic: 'Tooling', subtopic: 'Food', group_label: 'Matcha', description: 'Habit tracker and analytics for matcha lovers.', preview: 'matcha' },
+      { id: uid(), title: 'Japanese Flashcards', url: 'https://example.com/japanese-flashcards', type: 'HTML Files', topic: 'Personal Project', subtopic: 'Language', group_label: 'Japanese', description: 'Spaced repetition flashcard app.', preview: 'flash' },
+      { id: uid(), title: 'Workout Landing Page', url: 'https://example.com/workout', type: 'Case Studies', topic: 'Web Design', subtopic: 'Fitness', group_label: 'Landing Pages', description: 'Fitness landing page concept.', preview: 'workout' },
+      { id: uid(), title: 'Smoothie Builder', url: 'https://example.com/smoothie', type: 'Experiments', topic: 'Web Design', subtopic: 'Food', group_label: 'Interactive Tools', description: 'Interactive smoothie builder UI.', preview: 'smoothie' },
+      { id: uid(), title: 'Site Library', url: 'https://example.com/site-library', type: 'HTML Files', topic: 'Tooling', subtopic: 'Navigator', group_label: 'Library', description: 'Personal navigator for HTML projects.', preview: 'dark' },
+      { id: uid(), title: 'Portfolio Concept', url: 'https://example.com/portfolio', type: 'Case Studies', topic: 'Web Design', subtopic: 'Portfolio', group_label: 'Personal Site', description: 'Personal portfolio website concept.', preview: 'portfolio' },
+      { id: uid(), title: 'Collection Tracker', url: 'https://example.com/collection', type: 'HTML Files', topic: 'Tooling', subtopic: 'Catalog', group_label: 'Tracker', description: 'Catalog and track your favorite items.', preview: 'collection' },
+      { id: uid(), title: 'Checklist App', url: 'https://example.com/checklist', type: 'Experiments', topic: 'UI System', subtopic: 'Productivity', group_label: 'Tasks', description: 'Clean checklist and task management UI.', preview: 'checklist' },
+      { id: uid(), title: 'Travel Guide', url: 'https://example.com/travel', type: 'Live Links', topic: 'Web Design', subtopic: 'Travel', group_label: 'Guides', description: 'Travel inspiration and guide layout.', preview: 'travel' }
+    ];
+
+    const state = {
+      destinations: [],
+      filtered: [],
+      activeFilter: 'All',
+      search: '',
+      selectedId: null,
+      pendingReview: [],
+      draggedId: null,
+      categories: []
+    };
+
+    const el = {
+      body: document.body,
+      siteGrid: document.getElementById('siteGrid'),
+      routeCount: document.getElementById('routeCount'),
+      searchInput: document.getElementById('searchInput'),
+      filters: document.getElementById('filters'),
+      emptyState: document.getElementById('emptyState'),
+      banner: document.getElementById('statusBanner'),
+      showcaseModeBtn: document.getElementById('showcaseModeBtn'),
+      devModeBtn: document.getElementById('devModeBtn'),
+      modeStatus: document.getElementById('modeStatus'),
+      addForm: document.getElementById('addForm'),
+      newTitle: document.getElementById('newTitle'),
+      newUrl: document.getElementById('newUrl'),
+      newCategory: document.getElementById('newCategory'),
+      newDescription: document.getElementById('newDescription'),
+      newStatus: document.getElementById('newStatus'),
+      newImageUrl: document.getElementById('newImageUrl'),
+      newImageFile: document.getElementById('newImageFile'),
+      newTopic: document.getElementById('newTopic'),
+      newSubtopic: document.getElementById('newSubtopic'),
+      topbarUploadInput: document.getElementById('topbarUploadInput'),
+      panelUploadInput: document.getElementById('panelUploadInput'),
+      viewerTitle: document.getElementById('viewerTitle'),
+      viewerAddress: document.getElementById('viewerAddress'),
+      viewerFrame: document.getElementById('viewerFrame'),
+      openOriginal: document.getElementById('openOriginal'),
+      backToNavigator: document.getElementById('backToNavigator'),
+      editModal: document.getElementById('editModal'),
+      editForm: document.getElementById('editForm'),
+      editName: document.getElementById('editName'),
+      editUrl: document.getElementById('editUrl'),
+      editStatus: document.getElementById('editStatus'),
+      editDescription: document.getElementById('editDescription'),
+      editCategories: document.getElementById('editCategories'),
+      editTopic: document.getElementById('editTopic'),
+      editSubtopic: document.getElementById('editSubtopic'),
+      editImageUrl: document.getElementById('editImageUrl'),
+      editImageFile: document.getElementById('editImageFile'),
+      editType: document.getElementById('editType'),
+      categoryModal: document.getElementById('categoryModal'),
+      categoryForm: document.getElementById('categoryForm'),
+      categoryNameInput: document.getElementById('categoryNameInput'),
+      categoryList: document.getElementById('categoryList'),
+      reviewModal: document.getElementById('reviewModal'),
+      reviewList: document.getElementById('reviewList'),
+      acceptSuggestionsBtn: document.getElementById('acceptSuggestionsBtn'),
+      savePlacementsBtn: document.getElementById('savePlacementsBtn'),
+      reviewLaterBtn: document.getElementById('reviewLaterBtn'),
+      cardTemplate: document.getElementById('cardTemplate')
+    };
+
+    init();
+
+    async function init() {
+      bindEvents();
+      setDevMode(localStorage.getItem(devKey) === 'true', { silent: true });
+      await loadDestinations();
+      await loadCategories();
+      loadPendingReview();
+      applyFilters();
+      if (!supabaseReady) showBanner('Supabase is not connected yet. Run `npm start` locally with a `.env` file, or configure GitHub Secrets for Pages.');
+    }
+
+    function bindEvents() {
+      el.searchInput.addEventListener('input', event => {
+        state.search = event.target.value.trim().toLowerCase();
+        applyFilters();
+      });
+
+      document.addEventListener('keydown', event => {
+        const isMacSearch = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k';
+        if (isMacSearch) {
+          event.preventDefault();
+          el.searchInput.focus();
+        }
+        if (event.key === 'Escape') closeAllModals();
+      });
+
+      document.querySelectorAll('[data-jump]').forEach(btn => btn.addEventListener('click', () => {
+        const target = document.getElementById(btn.dataset.jump);
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }));
+
+      document.querySelectorAll('[data-action]').forEach(btn => btn.addEventListener('click', () => handleAction(btn.dataset.action)));
+
+      el.showcaseModeBtn.addEventListener('click', () => setDevMode(false));
+      el.devModeBtn.addEventListener('click', () => {
+        if (document.body.classList.contains('dev-mode')) return;
+        const pw = prompt('Enter development password');
+        if (pw === DEV_PASSWORD) setDevMode(true);
+        else if (pw !== null) showBanner('Incorrect password. Development mode stayed off.');
+      });
+
+      el.addForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        const categoryNames = parseCategories(el.newCategory.value || 'Web Design');
+        const imageFile = el.newImageFile.files && el.newImageFile.files[0];
+        let imageUrl = el.newImageUrl.value.trim();
+        let imagePath = '';
+        if (imageFile) {
+          const uploaded = await uploadPreviewImage(imageFile);
+          imageUrl = uploaded.image_url || imageUrl;
+          imagePath = uploaded.image_path || '';
+        }
+        const item = normalizeDestination({
+          id: uid(),
+          mode: 'url',
+          title: el.newTitle.value,
+          address: el.newUrl.value,
+          url: el.newUrl.value,
+          type: 'Live Links',
+          topic: el.newTopic.value || 'Web Design',
+          subtopic: el.newSubtopic.value || 'General',
+          group_label: categoryNames[0] || 'Web Design',
+          categories: categoryNames,
+          group_id: slugify(categoryNames[0] || 'Web Design'),
+          classification_status: 'manual',
+          manual_classification: true,
+          description: el.newDescription.value || 'Saved website link.',
+          website_status: el.newStatus.value || 'working',
+          image_url: imageUrl,
+          image_path: imagePath,
+          preview: imageUrl ? 'image' : 'portfolio'
+        });
+        await saveDestination(item);
+        el.addForm.reset();
+        showBanner('Saved link.');
+      });
+
+      el.topbarUploadInput.addEventListener('change', event => uploadHtmlFiles(event.target.files));
+      el.panelUploadInput.addEventListener('change', event => uploadHtmlFiles(event.target.files));
+      el.backToNavigator.addEventListener('click', () => closeViewer());
+
+      el.editForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        const item = state.destinations.find(x => x.id === state.selectedId);
+        if (!item) return;
+        const imageFile = el.editImageFile.files && el.editImageFile.files[0];
+        if (imageFile) {
+          const uploaded = await uploadPreviewImage(imageFile, item.id);
+          if (uploaded.image_url) item.image_url = uploaded.image_url;
+          if (uploaded.image_path) item.image_path = uploaded.image_path;
+        }
+        item.title = el.editName.value.trim();
+        item.url = el.editUrl.value.trim() || item.url;
+        item.address = item.url;
+        item.type = el.editType.value.trim() || item.type;
+        item.description = el.editDescription.value.trim();
+        item.topic = el.editTopic.value.trim();
+        item.subtopic = el.editSubtopic.value.trim();
+        item.website_status = el.editStatus.value || 'working';
+        item.image_url = el.editImageUrl.value.trim() || item.image_url || '';
+        item.categories = parseCategories(el.editCategories.value || item.group_label || item.category);
+        item.category = item.categories[0] || '';
+        item.group_label = item.category;
+        item.group_id = slugify(item.category);
+        item.manual_classification = true;
+        item.renamed_at = new Date().toISOString();
+        await persistAll();
+        closeAllModals();
+        applyFilters();
+        showBanner('Project saved.');
+      });
+
+      el.categoryForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        await addCategory(el.categoryNameInput.value);
+        el.categoryNameInput.value = '';
+      });
+
+      document.querySelectorAll('[data-close-modal]').forEach(btn => btn.addEventListener('click', () => closeModal(btn.dataset.closeModal)));
+      el.acceptSuggestionsBtn.addEventListener('click', acceptSuggestions);
+      el.savePlacementsBtn.addEventListener('click', savePlacements);
+      el.reviewLaterBtn.addEventListener('click', () => { closeModal('reviewModal'); showBanner('Uploads saved. You can review classifications later.'); });
+    }
+
+    async function loadDestinations() {
+      const local = readJSON(storageKey, null);
+      if (local && Array.isArray(local) && local.length) {
+        state.destinations = local.map(normalizeDestination);
+        return;
+      }
+
+      if (sb) {
+        try {
+          const { data, error } = await sb.from(ROUTES_TABLE).select('*').order('uploaded_at', { ascending: false });
+          if (error) throw error;
+          if (data && data.length) {
+            state.destinations = data.map(normalizeDestination);
+            writeJSON(storageKey, state.destinations);
+            return;
+          }
+        } catch (error) {
+          console.warn(error);
+          showBanner('Could not load Supabase rows. Showing starter projects.');
+        }
+      }
+
+      state.destinations = seedDestinations.map(normalizeDestination);
+      writeJSON(storageKey, state.destinations);
+    }
+
+    function loadPendingReview() {
+      state.pendingReview = readJSON(pendingKey, []);
+    }
+
+    function setDevMode(enabled, options = {}) {
+      document.body.classList.toggle('dev-mode', enabled);
+      el.showcaseModeBtn.classList.toggle('active', !enabled);
+      el.devModeBtn.classList.toggle('active', enabled);
+      el.modeStatus.textContent = enabled ? 'Mode: Development' : 'Mode: Showcase';
+      localStorage.setItem(devKey, String(enabled));
+      if (!options.silent) showBanner(enabled ? 'Development mode enabled.' : 'Showcase mode enabled.');
+    }
+
+    function buildFilters() {
+      const baseFilters = ['All', 'HTML Files', 'Live Links'];
+      const categoryFilters = unique([...state.categories, ...state.destinations.flatMap(item => item.categories || [item.category]).filter(Boolean)]);
+      const filters = unique([...baseFilters, ...categoryFilters]);
+      if (!filters.includes(state.activeFilter)) state.activeFilter = 'All';
+      el.filters.innerHTML = '';
+      filters.forEach(filter => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'chip' + (state.activeFilter === filter ? ' active' : '');
+        btn.textContent = filter;
+        btn.addEventListener('click', () => {
+          state.activeFilter = filter;
+          applyFilters();
+        });
+        el.filters.appendChild(btn);
+      });
+    }
+
+    function applyFilters() {
+      buildFilters();
+      const query = state.search;
+      state.filtered = state.destinations.filter(item => {
+        const itemCategories = item.categories || [item.category].filter(Boolean);
+        const matchesFilter = state.activeFilter === 'All' || item.type === state.activeFilter || itemCategories.includes(state.activeFilter) || item.topic === state.activeFilter;
+        const haystack = [item.title, item.topic, item.subtopic, ...itemCategories, item.group_label, item.group_id, item.address, item.url, item.description, statusLabel(item.website_status)].join(' ').toLowerCase();
+        return matchesFilter && (!query || haystack.includes(query));
+      }).sort((a, b) => ((a.category || '') + (a.topic || '') + a.title).localeCompare((b.category || '') + (b.topic || '') + b.title));
+      renderGrid();
+    }
+
+    function renderGrid() {
+      el.routeCount.textContent = state.destinations.length;
+      el.siteGrid.innerHTML = '';
+      el.emptyState.classList.toggle('visible', state.filtered.length === 0);
+
+      state.filtered.forEach(item => {
+        const node = el.cardTemplate.content.firstElementChild.cloneNode(true);
+        node.dataset.id = item.id;
+        node.draggable = document.body.classList.contains('dev-mode');
+        const previewEl = node.querySelector('.preview');
+        previewEl.className = 'preview ' + (item.image_url ? 'has-image' : (item.preview || 'portfolio'));
+        if (item.image_url) previewEl.style.setProperty('--image-url', `url('${cssUrl(item.image_url)}')`);
+        node.querySelector('.preview h3').textContent = item.title;
+        node.querySelector('.preview p').textContent = item.description || item.url;
+        const meta = node.querySelector('.meta');
+        meta.textContent = (item.categories && item.categories[0]) || item.category || item.topic || item.type;
+        const statusEl = node.querySelector('.status-dot');
+        statusEl.dataset.status = item.website_status || 'working';
+        statusEl.title = statusLabel(item.website_status);
+        meta.classList.toggle('web', /web/i.test(item.topic + ' ' + item.category));
+        meta.classList.toggle('personal', /personal|ai/i.test(item.topic + ' ' + item.category));
+        meta.classList.toggle('ui', /ui/i.test(item.topic + ' ' + item.category));
+        node.querySelector('.card-title').textContent = item.title;
+        node.querySelector('.card-desc').textContent = item.description || item.url;
+        renderTags(node.querySelector('.tag-row'), [...(item.categories || []), item.topic, item.subtopic].filter(Boolean));
+        node.querySelector('.card-title').addEventListener('click', () => openViewer(item.id));
+        node.querySelector('.icon-btn').addEventListener('click', () => window.open(item.url, '_blank', 'noopener'));
+        node.querySelector('.more').addEventListener('click', () => openEdit(item.id));
+        node.addEventListener('click', () => state.selectedId = item.id);
+        node.addEventListener('dragstart', event => {
+          if (!document.body.classList.contains('dev-mode')) { event.preventDefault(); return; }
+          state.draggedId = item.id;
+          node.classList.add('dragging');
+          event.dataTransfer.effectAllowed = 'move';
+        });
+        node.addEventListener('dragend', () => node.classList.remove('dragging'));
+        node.addEventListener('dragover', event => {
+          if (!document.body.classList.contains('dev-mode')) return;
+          event.preventDefault();
+          node.classList.add('drop-hint');
+        });
+        node.addEventListener('dragleave', () => node.classList.remove('drop-hint'));
+        node.addEventListener('drop', async event => {
+          event.preventDefault();
+          node.classList.remove('drop-hint');
+          if (!document.body.classList.contains('dev-mode')) return;
+          await reclassifyByDrop(state.draggedId, item.id);
+        });
+        el.siteGrid.appendChild(node);
+      });
+    }
+
+    async function reclassifyByDrop(sourceId, targetId) {
+      if (!sourceId || !targetId || sourceId === targetId) return;
+      const source = state.destinations.find(x => x.id === sourceId);
+      const target = state.destinations.find(x => x.id === targetId);
+      if (!source || !target) return;
+      source.topic = target.topic;
+      source.subtopic = target.subtopic;
+      source.group_label = target.group_label;
+      source.category = target.category;
+      source.categories = target.categories ? [...target.categories] : [target.category].filter(Boolean);
+      source.group_id = target.group_id;
+      source.manual_classification = true;
+      source.reviewed_at = new Date().toISOString();
+      await persistAll();
+      applyFilters();
+      showBanner(`Moved “${source.title}” into ${target.topic || 'the selected group'}.`);
+    }
+
+    async function handleAction(action) {
+      switch (action) {
+        case 'backTop': window.scrollTo({ top: 0, behavior: 'smooth' }); break;
+        case 'focusSearch': el.searchInput.focus(); break;
+        case 'focusAdd': el.newTitle.focus(); break;
+        case 'upload': el.topbarUploadInput.click(); break;
+        case 'openSelected': openViewer(state.selectedId || state.filtered[0]?.id); break;
+        case 'renameSelected': openEdit(state.selectedId || state.filtered[0]?.id); break;
+        case 'editSelected': openEdit(state.selectedId || state.filtered[0]?.id); break;
+        case 'manageCategories': openCategoryManager(); break;
+        case 'review': openReviewModal(); break;
+        case 'sync': await syncSupabase(); break;
+        case 'clearState': await clearState(); break;
+      }
+    }
+
+    function openViewer(id) {
+      const item = state.destinations.find(x => x.id === id);
+      if (!item) { showBanner('Select a project first.'); return; }
+      state.selectedId = id;
+      el.viewerTitle.textContent = item.title;
+      el.viewerAddress.textContent = item.url;
+      el.openOriginal.href = item.url;
+      el.viewerFrame.src = item.url;
+      item.last_accessed_at = new Date().toISOString();
+      persistAll({ skipRemoteLocalOnly: true });
+      document.body.classList.add('viewer-open');
+    }
+
+    function closeViewer() {
+      document.body.classList.remove('viewer-open');
+      el.viewerFrame.src = 'about:blank';
+    }
+
+    function openEdit(id) {
+      if (!document.body.classList.contains('dev-mode')) { showBanner('Turn on development mode to edit.'); return; }
+      const item = state.destinations.find(x => x.id === id);
+      if (!item) { showBanner('Select a project first.'); return; }
+      state.selectedId = id;
+      el.editName.value = item.title || '';
+      el.editUrl.value = item.url || '';
+      el.editStatus.value = item.website_status || 'working';
+      el.editDescription.value = item.description || '';
+      el.editCategories.value = (item.categories && item.categories.length ? item.categories : [item.category || item.group_label].filter(Boolean)).join(', ');
+      el.editTopic.value = item.topic || '';
+      el.editSubtopic.value = item.subtopic || '';
+      el.editImageUrl.value = item.image_url || '';
+      el.editImageFile.value = '';
+      el.editType.value = item.type || '';
+      openModal('editModal');
+      setTimeout(() => el.editName.focus(), 60);
+    }
+
+    function openCategoryManager() {
+      if (!document.body.classList.contains('dev-mode')) { showBanner('Turn on development mode to edit categories.'); return; }
+      renderCategoryManager();
+      openModal('categoryModal');
+    }
+
+    async function addCategory(name) {
+      const category = String(name || '').trim();
+      if (!category) return;
+      state.categories = unique([...state.categories, category]);
+      await persistCategories();
+      renderCategoryOptions();
+      renderCategoryManager();
+      buildFilters();
+      showBanner(`Added category “${category}”.`);
+    }
+
+    async function removeCategory(category) {
+      const ok = confirm(`Remove “${category}” from the category list and from any project cards?`);
+      if (!ok) return;
+      state.categories = state.categories.filter(x => x !== category);
+      state.destinations.forEach(item => {
+        item.categories = (item.categories || [item.category]).filter(x => x && x !== category);
+        if (item.category === category || item.group_label === category) {
+          item.category = item.categories[0] || '';
+          item.group_label = item.category;
+          item.group_id = slugify(item.category);
+        }
+      });
+      await persistAll();
+      if (sb) {
+        try { await sb.from(CATEGORIES_TABLE).delete().eq('name', category); }
+        catch (error) { console.warn(error); }
+      }
+      await persistCategories();
+      renderCategoryOptions();
+      renderCategoryManager();
+      applyFilters();
+      showBanner(`Removed category “${category}”.`);
+    }
+
+    function renderCategoryManager() {
+      el.categoryList.innerHTML = '';
+      unique(state.categories).forEach(category => {
+        const token = document.createElement('span');
+        token.className = 'category-token';
+        token.innerHTML = `<span>${escapeHTML(category)}</span><button type="button" aria-label="Remove ${escapeAttr(category)}">×</button>`;
+        token.querySelector('button').addEventListener('click', () => removeCategory(category));
+        el.categoryList.appendChild(token);
+      });
+      if (!el.categoryList.children.length) el.categoryList.textContent = 'No categories yet.';
+    }
+
+    function renderCategoryOptions() {
+      const options = document.getElementById('categoryOptions');
+      if (!options) return;
+      options.innerHTML = unique(state.categories).map(category => `<option value="${escapeAttr(category)}"></option>`).join('');
+    }
+
+    async function uploadHtmlFiles(fileList) {
+      if (!document.body.classList.contains('dev-mode')) { showBanner('Turn on development mode to upload HTML.'); return; }
+      const files = [...fileList].filter(file => /\.html?$/i.test(file.name));
+      if (!files.length) { showBanner('Choose one or more .html files.'); return; }
+
+      const existingNames = new Set(state.destinations.map(x => (x.source_name || x.original_name || x.title).toLowerCase()));
+      const created = [];
+      const skipped = [];
+
+      for (const file of files) {
+        if (existingNames.has(file.name.toLowerCase())) { skipped.push(file.name); continue; }
+        const suggestion = suggestClassification(file.name);
+        const id = uid();
+        const filePath = `${id}/${file.name.replace(/[^a-z0-9._-]/gi, '-')}`;
+        let publicUrl = URL.createObjectURL(file);
+        let localOnly = true;
+
+        if (sb) {
+          try {
+            const { error: uploadError } = await sb.storage
+              .from(UPLOAD_BUCKET)
+              .upload(filePath, file, {
+                contentType: 'text/html',
+                metadata: { mimetype: 'text/html', source_name: file.name },
+                upsert: false
+              });
+            if (uploadError) throw uploadError;
+            const { data: publicData } = sb.storage.from(UPLOAD_BUCKET).getPublicUrl(filePath);
+            publicUrl = publicData.publicUrl;
+            localOnly = false;
+          } catch (error) {
+            console.warn(error);
+            showBanner(`Could not upload ${file.name} to Supabase Storage. Kept it locally for this browser session.`);
+          }
+        }
+
+        const item = normalizeDestination({
+          id,
+          mode: 'upload',
+          type: 'HTML Files',
+          title: cleanName(file.name),
+          description: 'Uploaded HTML project.',
+          website_status: 'under_construction',
+          address: publicUrl,
+          url: publicUrl,
+          source_name: file.name,
+          file_path: filePath,
+          topic: suggestion.topic,
+          subtopic: suggestion.subtopic,
+          group_label: suggestion.category,
+          categories: [suggestion.category],
+          group_id: slugify(suggestion.category),
+          classification_status: 'suggested',
+          manual_classification: false,
+          uploaded_at: new Date().toISOString(),
+          preview: suggestion.preview,
+          local_only: localOnly,
+          original_name: file.name
+        });
+        state.destinations.push(item);
+        state.pendingReview.push(item);
+        created.push(item);
+        existingNames.add(file.name.toLowerCase());
+      }
+
+      writeJSON(pendingKey, state.pendingReview);
+      await persistAll({ skipRemoteLocalOnly: true });
+      applyFilters();
+      el.topbarUploadInput.value = '';
+      el.panelUploadInput.value = '';
+      if (created.length) openReviewModal();
+      const message = `${created.length} upload${created.length === 1 ? '' : 's'} added` + (skipped.length ? `; ${skipped.length} duplicate${skipped.length === 1 ? '' : 's'} ignored.` : '.');
+      showBanner(message);
+    }
+
+    function suggestClassification(fileName) {
+      const name = fileName.toLowerCase();
+      if (name.includes('matcha')) return { category: 'Matcha', topic: 'Tooling', subtopic: 'Food', preview: 'matcha' };
+      if (name.includes('ai') || name.includes('llm') || name.includes('genai') || name.includes('chatbot')) return { category: 'AI Learning', topic: 'Learning', subtopic: 'AI', preview: 'dark' };
+      if (name.includes('japanese') || name.includes('flash')) return { category: 'Learning', topic: 'Personal Project', subtopic: 'Language', preview: 'flash' };
+      if (name.includes('workout') || name.includes('fitness')) return { category: 'Fitness', topic: 'Web Design', subtopic: 'Fitness', preview: 'workout' };
+      if (name.includes('smoothie')) return { category: 'Food', topic: 'Web Design', subtopic: 'Food', preview: 'smoothie' };
+      if (name.includes('navigator') || name.includes('library')) return { category: 'Tools', topic: 'Tooling', subtopic: 'Navigator', preview: 'dark' };
+      if (name.includes('travel')) return { category: 'Travel', topic: 'Web Design', subtopic: 'Travel', preview: 'travel' };
+      if (name.includes('check')) return { category: 'Productivity', topic: 'UI System', subtopic: 'Tasks', preview: 'checklist' };
+      return { category: 'Web Design', topic: 'Web Design', subtopic: 'General', preview: 'portfolio' };
+    }
+
+    function openReviewModal() {
+      if (!document.body.classList.contains('dev-mode')) { showBanner('Turn on development mode to organize uploads.'); return; }
+      renderReviewList();
+      openModal('reviewModal');
+    }
+
+    function renderReviewList() {
+      el.reviewList.innerHTML = '';
+      if (!state.pendingReview.length) {
+        el.reviewList.innerHTML = '<p>No uploads are waiting for review.</p>';
+        return;
+      }
+      state.pendingReview.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'review-item';
+        row.dataset.id = item.id;
+        row.innerHTML = `
+          <strong>${escapeHTML(item.title)}</strong>
+          <div class="review-grid">
+            <label class="field"><span>Category</span><input data-review-field="category" value="${escapeAttr(item.category)}"></label>
+            <label class="field"><span>Topic</span><input data-review-field="topic" value="${escapeAttr(item.topic)}"></label>
+            <label class="field"><span>Subtopic</span><input data-review-field="subtopic" value="${escapeAttr(item.subtopic)}"></label>
+          </div>
+        `;
+        el.reviewList.appendChild(row);
+      });
+    }
+
+    function acceptSuggestions() {
+      state.pendingReview.forEach(item => {
+        const suggestion = suggestClassification(item.original_name || item.title);
+        item.category = suggestion.category;
+        item.group_label = suggestion.category;
+        item.group_id = slugify(suggestion.category);
+        item.topic = suggestion.topic;
+        item.subtopic = suggestion.subtopic;
+        item.preview = suggestion.preview;
+      });
+      renderReviewList();
+      showBanner('Suggestions accepted. Save placements when ready.');
+    }
+
+    async function savePlacements() {
+      [...el.reviewList.querySelectorAll('.review-item')].forEach(row => {
+        const item = state.destinations.find(x => x.id === row.dataset.id);
+        if (!item) return;
+        row.querySelectorAll('[data-review-field]').forEach(input => item[input.dataset.reviewField] = input.value.trim());
+        item.group_label = item.category;
+        item.group_id = slugify(item.category);
+        item.manual_classification = true;
+        item.classification_status = 'reviewed';
+        item.reviewed_at = new Date().toISOString();
+      });
+      state.pendingReview = [];
+      writeJSON(pendingKey, state.pendingReview);
+      await persistAll({ skipRemoteLocalOnly: true });
+      closeModal('reviewModal');
+      applyFilters();
+      showBanner('Placements saved.');
+    }
+
+    async function saveDestination(item) {
+      state.destinations.push(item);
+      await persistAll();
+      applyFilters();
+    }
+
+    async function persistAll(options = {}) {
+      writeJSON(storageKey, state.destinations);
+      if (!sb) return;
+      const rows = options.skipRemoteLocalOnly ? state.destinations.filter(x => !x.local_only && !(x.url || '').startsWith('blob:')) : state.destinations;
+      try {
+        const routeRows = rows.map(toRouteRow);
+        const { error } = await sb.from(ROUTES_TABLE).upsert(routeRows, { onConflict: 'id' });
+        if (error) throw error;
+        await upsertTaxonomy(routeRows);
+        await upsertCategories(rows);
+      } catch (error) {
+        console.warn(error);
+        showBanner('Saved locally. Supabase sync needs routes/taxonomy credentials or policies.');
+      }
+    }
+
+    async function syncSupabase() {
+      if (!sb) { showBanner('Add Supabase URL and anon key before syncing.'); return; }
+      await persistAll({ skipRemoteLocalOnly: true });
+      showBanner('Synced durable routes and taxonomy to Supabase. Local blob uploads stay browser-only.');
+    }
+
+    async function clearState() {
+      const ok = confirm('Clear localStorage, sessionStorage, and available IndexedDB databases, then reload?');
+      if (!ok) return;
+      window.dispatchEvent(new CustomEvent('navigator:clear-state'));
+      localStorage.clear();
+      sessionStorage.clear();
+      if (indexedDB.databases) {
+        try {
+          const dbs = await indexedDB.databases();
+          await Promise.all(dbs.filter(db => db.name).map(db => new Promise(resolve => {
+            const req = indexedDB.deleteDatabase(db.name);
+            req.onsuccess = req.onerror = req.onblocked = resolve;
+          })));
+        } catch (error) { console.warn(error); }
+      }
+      location.reload();
+    }
+
+    function normalizeDestination(raw) {
+      const url = raw.url || raw.address || '#';
+      const categories = parseCategories(raw.categories || raw.category || raw.group_label || raw.family || inferCategory(raw) || '');
+      const category = categories[0] || '';
+      return {
+        id: raw.id || uid(),
+        mode: raw.mode || (raw.file_path ? 'upload' : 'url'),
+        title: (raw.title || raw.name || raw.source_name || 'Untitled').trim(),
+        description: raw.description || '',
+        address: raw.address || url,
+        url,
+        type: raw.type || (raw.mode === 'upload' ? 'HTML Files' : 'Live Links'),
+        topic: raw.topic || 'Web Design',
+        subtopic: raw.subtopic || '',
+        category,
+        categories,
+        group_label: raw.group_label || category,
+        group_id: raw.group_id || slugify(category),
+        classification_status: raw.classification_status || '',
+        manual_classification: Boolean(raw.manual_classification),
+        website_status: raw.website_status || raw.status || 'working',
+        image_url: raw.image_url || raw.preview_image_url || '',
+        image_path: raw.image_path || raw.preview_image_path || '',
+        source_name: raw.source_name || raw.original_name || raw.originalName || '',
+        file_path: raw.file_path || '',
+        preview: raw.preview || previewFromRecord(raw),
+        original_name: raw.original_name || raw.originalName || raw.source_name || '',
+        local_only: Boolean(raw.local_only),
+        uploaded_at: raw.uploaded_at || raw.created_at || new Date().toISOString(),
+        last_accessed_at: raw.last_accessed_at || null,
+        renamed_at: raw.renamed_at || null,
+        reviewed_at: raw.reviewed_at || null
+      };
+    }
+
+    function toRouteRow(item) {
+      return {
+        id: item.id,
+        mode: item.mode || ((item.file_path || item.source_name) ? 'upload' : 'url'),
+        type: item.type || null,
+        title: item.title || null,
+        description: item.description || null,
+        address: item.address || item.url || null,
+        url: item.url || item.address || null,
+        source_name: item.source_name || item.original_name || null,
+        file_path: item.file_path || null,
+        topic: item.topic || null,
+        subtopic: item.subtopic || null,
+        group_label: item.category || item.group_label || null,
+        group_id: item.group_id || slugify(item.category || item.group_label || ''),
+        classification_status: item.classification_status || null,
+        manual_classification: Boolean(item.manual_classification),
+        uploaded_at: item.uploaded_at || new Date().toISOString(),
+        last_accessed_at: item.last_accessed_at || null,
+        renamed_at: item.renamed_at || null,
+        reviewed_at: item.reviewed_at || null,
+        website_status: item.website_status || 'working',
+        image_url: item.image_url || null,
+        image_path: item.image_path || null
+      };
+    }
+
+    async function upsertTaxonomy(routeRows) {
+      if (!sb) return;
+      const taxonomyRows = unique(routeRows
+        .filter(row => row.topic && row.subtopic)
+        .map(row => `${row.topic}|||${row.subtopic}`))
+        .map(value => {
+          const [topic, subtopic] = value.split('|||');
+          return { topic, subtopic };
+        });
+      if (!taxonomyRows.length) return;
+      const { error } = await sb.from(TAXONOMY_TABLE).upsert(taxonomyRows, { onConflict: 'topic,subtopic' });
+      if (error) throw error;
+    }
+
+    async function loadCategories() {
+      const localCategories = unique(readJSON('jenn:portfolio-categories:v1', []));
+      const fromRoutes = unique(state.destinations.flatMap(item => item.categories || [item.category]).filter(Boolean));
+      state.categories = unique([...localCategories, ...fromRoutes, 'Matcha', 'AI Learning', 'Web Design', 'Tools']);
+      if (sb) {
+        try {
+          const { data, error } = await sb.from(CATEGORIES_TABLE).select('name').order('name', { ascending: true });
+          if (error) throw error;
+          if (data && data.length) state.categories = unique([...state.categories, ...data.map(row => row.name)]);
+          await loadRouteCategories();
+        } catch (error) {
+          console.warn(error);
+        }
+      }
+      renderCategoryOptions();
+      writeJSON('jenn:portfolio-categories:v1', state.categories);
+    }
+
+    async function loadRouteCategories() {
+      if (!sb || !state.destinations.length) return;
+      const ids = state.destinations.map(item => item.id);
+      const { data, error } = await sb.from(ROUTE_CATEGORIES_TABLE).select('route_id, category').in('route_id', ids);
+      if (error) throw error;
+      const byRoute = new Map();
+      (data || []).forEach(row => {
+        if (!byRoute.has(row.route_id)) byRoute.set(row.route_id, []);
+        byRoute.get(row.route_id).push(row.category);
+      });
+      state.destinations.forEach(item => {
+        const cats = byRoute.get(item.id);
+        if (cats && cats.length) {
+          item.categories = unique(cats);
+          item.category = item.categories[0] || '';
+          item.group_label = item.group_label || item.category;
+        }
+      });
+    }
+
+    async function persistCategories() {
+      writeJSON('jenn:portfolio-categories:v1', state.categories);
+      if (!sb) return;
+      const rows = unique(state.categories).map(name => ({ name, slug: slugify(name) }));
+      if (!rows.length) return;
+      const { error } = await sb.from(CATEGORIES_TABLE).upsert(rows, { onConflict: 'slug' });
+      if (error) console.warn(error);
+    }
+
+    async function upsertCategories(items) {
+      if (!sb) return;
+      const categories = unique([...state.categories, ...items.flatMap(item => item.categories || [item.category]).filter(Boolean)]);
+      state.categories = categories;
+      await persistCategories();
+      const linkRows = items.flatMap(item => (item.categories || [item.category]).filter(Boolean).map(category => ({ route_id: item.id, category })));
+      if (!linkRows.length) return;
+      const routeIds = unique(items.map(item => item.id));
+      await sb.from(ROUTE_CATEGORIES_TABLE).delete().in('route_id', routeIds);
+      const { error } = await sb.from(ROUTE_CATEGORIES_TABLE).upsert(linkRows, { onConflict: 'route_id,category' });
+      if (error) throw error;
+    }
+
+    async function uploadPreviewImage(file, ownerId = uid()) {
+      const localUrl = URL.createObjectURL(file);
+      if (!sb) return { image_url: localUrl, image_path: '' };
+      const ext = (file.name.split('.').pop() || 'png').replace(/[^a-z0-9]/gi, '').toLowerCase();
+      const path = `previews/${ownerId}-${Date.now()}.${ext}`;
+      try {
+        const { error } = await sb.storage.from(UPLOAD_BUCKET).upload(path, file, {
+          contentType: file.type || 'image/png',
+          metadata: { mimetype: file.type || 'image/png', source_name: file.name },
+          upsert: true
+        });
+        if (error) throw error;
+        const { data } = sb.storage.from(UPLOAD_BUCKET).getPublicUrl(path);
+        return { image_url: data.publicUrl, image_path: path };
+      } catch (error) {
+        console.warn(error);
+        showBanner('Could not upload preview image to Supabase. Using a local preview for this browser session.');
+        return { image_url: localUrl, image_path: '' };
+      }
+    }
+
+    function inferCategory(raw) {
+      const text = [raw.title, raw.topic, raw.subtopic, raw.source_name, raw.url].join(' ').toLowerCase();
+      if (text.includes('matcha')) return 'Matcha';
+      if (text.includes('ai') || text.includes('llm') || text.includes('genai')) return 'AI Learning';
+      if (text.includes('navigator') || text.includes('library')) return 'Tools';
+      return raw.type || '';
+    }
+
+    function previewFromRecord(raw) {
+      const text = [raw.title, raw.topic, raw.subtopic, raw.group_label, raw.source_name].join(' ').toLowerCase();
+      if (text.includes('matcha')) return 'matcha';
+      if (text.includes('japanese') || text.includes('flash')) return 'flash';
+      if (text.includes('workout') || text.includes('fitness')) return 'workout';
+      if (text.includes('smoothie')) return 'smoothie';
+      if (text.includes('navigator') || text.includes('library') || text.includes('ai')) return 'dark';
+      if (text.includes('travel')) return 'travel';
+      if (text.includes('check')) return 'checklist';
+      if (text.includes('collection')) return 'collection';
+      return 'portfolio';
+    }
+
+    function renderTags(container, tags) {
+      container.innerHTML = '';
+      unique(tags).slice(0, 3).forEach(tag => {
+        const pill = document.createElement('span');
+        pill.className = 'tag-pill';
+        pill.textContent = tag;
+        container.appendChild(pill);
+      });
+    }
+
+    function parseCategories(value) {
+      if (Array.isArray(value)) return unique(value);
+      return unique(String(value || '').split(',').map(x => x.trim()));
+    }
+
+
+    function statusLabel(status) {
+      return ({ working: 'Working', under_construction: 'Under construction', broken: 'Broken' })[status] || 'Working';
+    }
+
+    function cssUrl(value) {
+      return String(value || '').replace(/[\'"()]/g, encodeURIComponent);
+    }
+
+    function unique(list) { return [...new Set(list.filter(Boolean).map(x => String(x).trim()).filter(Boolean))]; }
+    function slugify(value) { return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || null; }
+
+    function openModal(id) { document.getElementById(id).classList.add('visible'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('visible'); }
+    function closeAllModals() { document.querySelectorAll('.modal-backdrop').forEach(x => x.classList.remove('visible')); }
+    function showBanner(message) {
+      el.banner.textContent = message;
+      el.banner.classList.add('visible');
+      clearTimeout(showBanner.timer);
+      showBanner.timer = setTimeout(() => el.banner.classList.remove('visible'), 5200);
+    }
+    function readJSON(key, fallback) {
+      try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
+      catch { return fallback; }
+    }
+    function writeJSON(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
+    function uid() { return (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Math.random().toString(16).slice(2) + Date.now()); }
+    function cleanName(fileName) { return fileName.replace(/\.html?$/i, '').replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase()); }
+    function escapeHTML(value) { return String(value).replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c])); }
+    function escapeAttr(value) { return escapeHTML(value).replace(/`/g, '&#96;'); }
+  </script>
+</body>
+</html>
