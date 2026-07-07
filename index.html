@@ -410,20 +410,20 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       padding: 7px;
-      border-radius: 20px;
+      border-radius: 32px;
       background: rgba(38, 32, 26, .09);
       gap: 5px;
       margin-bottom: 20px;
     }
     .mode-toggle button {
       border: 0;
-      border-radius: 14px;
+      border-radius: 20px;
       height: 42px;
       background: transparent;
       color: #756f68;
-      font-weight: 700;
+      font-weight: 300;
     }
-    .mode-toggle button.active { background: rgba(255,255,255,.92); color: var(--ink); box-shadow: 0 6px 18px rgba(30,26,22,.11); }
+    .mode-toggle button.active { background: rgba(255,255,255,.92); color: var(--muted); box-shadow: 0 6px 18px rgba(30,26,22,.11); }
     .status-chip {
       align-self: end;
       display: inline-flex;
@@ -486,9 +486,9 @@
       padding: 0 18px;
       border: 1px solid var(--line);
       background: rgba(255,255,255,.8);
-      font-weight: 750;
+      font-weight: 600;
     }
-    .primary-btn { background: #25221f; color: white; border-color: #25221f; }
+    .primary-btn { background: #756f68; color: white; border-color: #756f68; padding: 12px;}
     .danger-btn { color: var(--danger); }
     .banner {
       display: none;
@@ -535,9 +535,11 @@
       align-items: center;
       gap: 16px;
     }
-    .viewer-title { font-family: var(--serif); font-size: 24px; letter-spacing: -.04em; margin: 0; }
+    .viewer-title { font-family: var(--serif); font-size: 20px; letter-spacing: -.04em; margin: 0; }
     .viewer-address { margin: 3px 0 0; color: var(--muted); font-size: 13px; word-break: break-all; }
     .viewer-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: end; }
+    .version-select { min-height: 40px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.82); padding: 0 14px; color: #4f4944; max-width: 260px; }
+    .version-note { color: var(--muted); font-size: 12px; }
     .viewer-frame-wrap {
       border: 1px solid var(--line);
       border-radius: 18px;
@@ -699,7 +701,7 @@
           <button class="tool-button" data-dev-only data-action="upload" type="button">⇧ <span>Upload HTML</span></button>
           <button class="tool-button" data-dev-only data-action="focusAdd" type="button">↗ <span>Add Link</span></button>
           <button class="tool-button" data-dev-only data-action="editSelected" type="button">✎ <span>Edit selected</span></button>
-          <button class="tool-button" data-dev-only data-action="manageCategories" type="button">◌ <span>Categories</span></button>
+          
           <button class="tool-button" data-dev-only data-action="review" type="button">□ <span>Organize</span></button>
           <button class="tool-button" data-action="openSelected" type="button">▣ <span>Viewer</span></button>
           <button class="tool-button" data-action="focusSearch" type="button">⌕ <span>Search</span></button>
@@ -711,8 +713,8 @@
         <div class="tool-list">
           <button class="tool-button locked" data-dev-only data-action="clearState" type="button">☒ <span>Clear state</span></button>
           <button class="tool-button locked" data-dev-only data-action="sync" type="button">↻ <span>Sync Supabase</span></button>
-          <button class="tool-button locked" data-dev-only data-action="review" type="button">◇ <span>Review uploads</span></button>
-          <button class="tool-button locked" data-dev-only data-action="manageCategories" type="button">◌ <span>Manage categories</span></button>
+          <button class="tool-button locked" data-dev-only data-action="review" type="button">◇ <span>Organize uploads</span></button>
+          
         </div>
 
         <form id="addForm" class="add-panel" data-dev-only>
@@ -725,8 +727,8 @@
             <input id="newUrl" required type="url" placeholder="https://example.com" />
           </div>
           <div class="field">
-            <label for="newCategory">Category tag</label>
-            <input id="newCategory" list="categoryOptions" placeholder="Matcha" />
+            <label for="newCategory">Tags</label>
+            <input id="newCategory" list="categoryOptions" placeholder="Matcha, Tools" />
             <datalist id="categoryOptions">
               <option value="Matcha"></option>
               <option value="AI Learning"></option>
@@ -774,7 +776,7 @@
 
   <section class="viewer-shell" aria-label="Viewer mode">
     <header class="viewer-topbar">
-      <button id="backToNavigator" class="ghost-btn" type="button">← Back to Navigator</button>
+      <button id="backToNavigator" class="ghost-btn" type="button">← Back</button>
       <div>
         <h2 id="viewerTitle" class="viewer-title">Viewer</h2>
         <p id="viewerAddress" class="viewer-address"></p>
@@ -803,7 +805,7 @@
           <textarea id="editDescription"></textarea>
         </div>
         <div class="review-grid" style="margin-top:12px;">
-          <label class="field"><span>Categories</span><input id="editCategories" list="categoryOptions" placeholder="Matcha, AI Learning" /></label>
+          <label class="field"><span>Tags</span><input id="editCategories" list="categoryOptions" placeholder="Matcha, Tools" /></label>
           <label class="field"><span>Topic</span><input id="editTopic" /></label>
           <label class="field"><span>Subtopic</span><input id="editSubtopic" /></label>
         </div>
@@ -822,14 +824,14 @@
 
   <div id="categoryModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="categoryTitle">
     <div class="modal">
-      <h2 id="categoryTitle">Manage categories</h2>
-      <p>Add or remove category tags. Removing a category also removes it from saved project cards.</p>
+      <h2 id="categoryTitle">Topic index</h2>
+      <p>Topics are derived from saved projects.</p>
       <form id="categoryForm" class="category-manager">
         <div class="field">
-          <label for="categoryNameInput">New category</label>
-          <input id="categoryNameInput" placeholder="AI Learning" />
+          <label for="categoryNameInput">Topic</label>
+          <input id="categoryNameInput" placeholder="AI Learning" disabled />
         </div>
-        <button class="primary-btn" type="submit">Add Category</button>
+        <button class="primary-btn" type="submit" disabled>Topics are automatic</button>
       </form>
       <div id="categoryList" class="category-list" aria-live="polite"></div>
       <div class="modal-actions">
@@ -840,8 +842,8 @@
 
   <div id="reviewModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="reviewTitle">
     <div class="modal">
-      <h2 id="reviewTitle">Review uploads</h2>
-      <p>Suggested classifications are based on file names. Adjust category, topic, and subtopic before saving.</p>
+      <h2 id="reviewTitle">Organize uploads</h2>
+      <p>Adjust topic and subtopic before saving.</p>
       <div id="reviewList" class="review-list"></div>
       <div class="modal-actions">
         <button id="reviewLaterBtn" class="ghost-btn" type="button">Review Later</button>
@@ -870,27 +872,6 @@
   </template>
 
   <script>
-    /*
-      Supabase setup
-      This file is wired to your existing schema:
-      - public.routes stores portfolio destinations.
-      - public.taxonomy stores topic/subtopic options.
-      - storage bucket uploads stores uploaded HTML files.
-
-      Config loading:
-      - Local development: run `npm start`. The local server reads `.env` and
-        serves `/config.js`, which defines window.ENV.
-      - GitHub Pages: the included GitHub Actions workflow generates `config.js`
-        from repository secrets before deploying.
-
-      Do not hardcode secrets in this HTML file. Supabase anon keys are public
-      frontend keys, but keeping them in `.env` / GitHub Secrets makes local and
-      deploy config easier to manage.
-
-      Dev mode is password-gated with DEV_PASSWORD and is the only place where
-      add, upload, rename, organize, sync, and clear-state controls appear.
-    */
-
     const ENV = window.ENV || {};
     const SUPABASE_URL = ENV.SUPABASE_URL || '';
     const SUPABASE_ANON_KEY = ENV.SUPABASE_ANON_KEY || '';
@@ -904,31 +885,29 @@
     const supabaseReady = SUPABASE_URL.includes('supabase.co') && !SUPABASE_URL.includes('YOUR_PROJECT_ID') && !SUPABASE_ANON_KEY.includes('YOUR_');
     const sb = supabaseReady ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-    const storageKey = 'jenn:portfolio-routes:v2';
+    const storageKey = 'jenn:portfolio-routes:v3';
     const devKey = 'jenn:portfolio-dev-mode:v1';
-    const pendingKey = 'jenn:portfolio-pending-review:v1';
+    const pendingKey = 'jenn:portfolio-pending-review:v3';
+    const preferredKey = 'jenn:portfolio-preferred-versions:v1';
 
     const seedDestinations = [
-      { id: uid(), title: 'Matcha Tracker', url: 'https://example.com/matcha-tracker', type: 'HTML Files', topic: 'Tooling', subtopic: 'Food', group_label: 'Matcha', description: 'Habit tracker and analytics for matcha lovers.', preview: 'matcha' },
-      { id: uid(), title: 'Japanese Flashcards', url: 'https://example.com/japanese-flashcards', type: 'HTML Files', topic: 'Personal Project', subtopic: 'Language', group_label: 'Japanese', description: 'Spaced repetition flashcard app.', preview: 'flash' },
-      { id: uid(), title: 'Workout Landing Page', url: 'https://example.com/workout', type: 'Case Studies', topic: 'Web Design', subtopic: 'Fitness', group_label: 'Landing Pages', description: 'Fitness landing page concept.', preview: 'workout' },
-      { id: uid(), title: 'Smoothie Builder', url: 'https://example.com/smoothie', type: 'Experiments', topic: 'Web Design', subtopic: 'Food', group_label: 'Interactive Tools', description: 'Interactive smoothie builder UI.', preview: 'smoothie' },
-      { id: uid(), title: 'Site Library', url: 'https://example.com/site-library', type: 'HTML Files', topic: 'Tooling', subtopic: 'Navigator', group_label: 'Library', description: 'Personal navigator for HTML projects.', preview: 'dark' },
-      { id: uid(), title: 'Portfolio Concept', url: 'https://example.com/portfolio', type: 'Case Studies', topic: 'Web Design', subtopic: 'Portfolio', group_label: 'Personal Site', description: 'Personal portfolio website concept.', preview: 'portfolio' },
-      { id: uid(), title: 'Collection Tracker', url: 'https://example.com/collection', type: 'HTML Files', topic: 'Tooling', subtopic: 'Catalog', group_label: 'Tracker', description: 'Catalog and track your favorite items.', preview: 'collection' },
-      { id: uid(), title: 'Checklist App', url: 'https://example.com/checklist', type: 'Experiments', topic: 'UI System', subtopic: 'Productivity', group_label: 'Tasks', description: 'Clean checklist and task management UI.', preview: 'checklist' },
-      { id: uid(), title: 'Travel Guide', url: 'https://example.com/travel', type: 'Live Links', topic: 'Web Design', subtopic: 'Travel', group_label: 'Guides', description: 'Travel inspiration and guide layout.', preview: 'travel' }
+      { id: uid(), title: 'Matcha Tracker', url: 'https://example.com/matcha-tracker', type: 'HTML Files', topic: 'Matcha', subtopic: 'Tracker', group_label: 'Matcha Tracker', description: 'Habit tracker and analytics for matcha lovers.', preview: 'matcha', uploaded_at: daysAgo(1) },
+      { id: uid(), title: 'Japanese Flashcards', url: 'https://example.com/japanese-flashcards', type: 'HTML Files', topic: 'Learning', subtopic: 'Japanese', group_label: 'Japanese Flashcards', description: 'Spaced repetition flashcard app.', preview: 'flash', uploaded_at: daysAgo(2) },
+      { id: uid(), title: 'Smoothie Builder', url: 'https://example.com/smoothie', type: 'HTML Files', topic: 'Food', subtopic: 'Builder', group_label: 'Smoothie Builder', description: 'Interactive smoothie builder UI.', preview: 'smoothie', uploaded_at: daysAgo(3) }
     ];
 
     const state = {
       destinations: [],
+      groups: [],
       filtered: [],
       activeFilter: 'All',
       search: '',
       selectedId: null,
+      selectedGroupId: null,
       pendingReview: [],
-      draggedId: null,
-      categories: []
+      draggedGroupId: null,
+      tags: [],
+      preferred: {}
     };
 
     const el = {
@@ -988,11 +967,13 @@
     async function init() {
       bindEvents();
       setDevMode(localStorage.getItem(devKey) === 'true', { silent: true });
+      state.preferred = readJSON(preferredKey, {});
       await loadDestinations();
-      await loadCategories();
+      await loadTags();
       loadPendingReview();
+      rebuildGroups();
       applyFilters();
-      if (!supabaseReady) showBanner('Supabase is not connected yet. Run `npm start` locally with a `.env` file, or configure GitHub Secrets for Pages.');
+      if (!supabaseReady) showBanner('Supabase is not connected yet. Run locally with config.js, or configure GitHub Pages secrets.');
     }
 
     function bindEvents() {
@@ -1002,8 +983,7 @@
       });
 
       document.addEventListener('keydown', event => {
-        const isMacSearch = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k';
-        if (isMacSearch) {
+        if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
           event.preventDefault();
           el.searchInput.focus();
         }
@@ -1022,12 +1002,15 @@
         if (document.body.classList.contains('dev-mode')) return;
         const pw = prompt('Enter development password');
         if (pw === DEV_PASSWORD) setDevMode(true);
-        else if (pw !== null) showBanner('Incorrect password. Development mode stayed off.');
+        else if (pw !== null) showBanner('Incorrect password.');
       });
 
       el.addForm.addEventListener('submit', async event => {
         event.preventDefault();
-        const categoryNames = parseCategories(el.newCategory.value || 'Web Design');
+        const title = el.newTitle.value.trim();
+        const topic = el.newTopic.value.trim() || firstTopic() || 'Portfolio';
+        const subtopic = el.newSubtopic.value.trim() || 'General';
+        const tags = cleanTags([topic, subtopic, ...parseList(el.newCategory.value)]);
         const imageFile = el.newImageFile.files && el.newImageFile.files[0];
         let imageUrl = el.newImageUrl.value.trim();
         let imagePath = '';
@@ -1039,78 +1022,98 @@
         const item = normalizeDestination({
           id: uid(),
           mode: 'url',
-          title: el.newTitle.value,
+          title,
+          description: el.newDescription.value || 'Saved website link.',
           address: el.newUrl.value,
           url: el.newUrl.value,
           type: 'Live Links',
-          topic: el.newTopic.value || 'Web Design',
-          subtopic: el.newSubtopic.value || 'General',
-          group_label: categoryNames[0] || 'Web Design',
-          categories: categoryNames,
-          group_id: slugify(categoryNames[0] || 'Web Design'),
-          classification_status: 'manual',
+          topic,
+          subtopic,
+          group_label: title,
+          group_id: slugify(title),
+          classification_status: 'preferred',
           manual_classification: true,
-          description: el.newDescription.value || 'Saved website link.',
           website_status: el.newStatus.value || 'working',
           image_url: imageUrl,
           image_path: imagePath,
-          preview: imageUrl ? 'image' : 'portfolio'
+          tags,
+          uploaded_at: new Date().toISOString(),
+          preview: imageUrl ? 'image' : previewFromText(title + ' ' + topic + ' ' + subtopic)
         });
-        await saveDestination(item);
+        state.destinations.push(item);
+        state.preferred[item.group_id] = item.id;
+        await persistAll();
         el.addForm.reset();
-        showBanner('Saved link.');
+        rebuildGroups();
+        applyFilters();
+        showBanner('Saved.');
       });
 
       el.topbarUploadInput.addEventListener('change', event => uploadHtmlFiles(event.target.files));
       el.panelUploadInput.addEventListener('change', event => uploadHtmlFiles(event.target.files));
-      el.backToNavigator.addEventListener('click', () => closeViewer());
+      el.backToNavigator.addEventListener('click', closeViewer);
 
       el.editForm.addEventListener('submit', async event => {
         event.preventDefault();
+        const group = getGroup(state.selectedGroupId);
         const item = state.destinations.find(x => x.id === state.selectedId);
-        if (!item) return;
+        if (!group || !item) return;
+
         const imageFile = el.editImageFile.files && el.editImageFile.files[0];
         if (imageFile) {
           const uploaded = await uploadPreviewImage(imageFile, item.id);
           if (uploaded.image_url) item.image_url = uploaded.image_url;
           if (uploaded.image_path) item.image_path = uploaded.image_path;
         }
-        item.title = el.editName.value.trim();
+
+        const title = el.editName.value.trim();
+        const topic = el.editTopic.value.trim() || item.topic;
+        const subtopic = el.editSubtopic.value.trim() || item.subtopic;
+        const tags = cleanTags([topic, subtopic, ...parseList(el.editCategories.value)]);
+        const nextGroupId = slugify(title || item.group_label || item.title);
+        const oldGroupId = item.group_id;
+
+        group.versions.forEach(version => {
+          version.group_label = title || version.group_label;
+          version.group_id = nextGroupId;
+          version.topic = topic;
+          version.subtopic = subtopic;
+          version.tags = tags;
+          version.category = tags[0] || topic;
+          version.group_tags = tags;
+          version.manual_classification = true;
+          version.reviewed_at = new Date().toISOString();
+        });
+
+        item.title = title || item.title;
         item.url = el.editUrl.value.trim() || item.url;
         item.address = item.url;
         item.type = el.editType.value.trim() || item.type;
         item.description = el.editDescription.value.trim();
-        item.topic = el.editTopic.value.trim();
-        item.subtopic = el.editSubtopic.value.trim();
         item.website_status = el.editStatus.value || 'working';
         item.image_url = el.editImageUrl.value.trim() || item.image_url || '';
-        item.categories = parseCategories(el.editCategories.value || item.group_label || item.category);
-        item.category = item.categories[0] || '';
-        item.group_label = item.category;
-        item.group_id = slugify(item.category);
-        item.manual_classification = true;
         item.renamed_at = new Date().toISOString();
+
+        delete state.preferred[oldGroupId];
+        state.preferred[nextGroupId] = item.id;
+        markPreferred(nextGroupId, item.id);
         await persistAll();
         closeAllModals();
+        rebuildGroups();
         applyFilters();
-        showBanner('Project saved.');
+        showBanner('Saved.');
       });
 
-      el.categoryForm.addEventListener('submit', async event => {
-        event.preventDefault();
-        await addCategory(el.categoryNameInput.value);
-        el.categoryNameInput.value = '';
-      });
-
+      el.categoryForm.addEventListener('submit', event => event.preventDefault());
       document.querySelectorAll('[data-close-modal]').forEach(btn => btn.addEventListener('click', () => closeModal(btn.dataset.closeModal)));
       el.acceptSuggestionsBtn.addEventListener('click', acceptSuggestions);
       el.savePlacementsBtn.addEventListener('click', savePlacements);
-      el.reviewLaterBtn.addEventListener('click', () => { closeModal('reviewModal'); showBanner('Uploads saved. You can review classifications later.'); });
+      el.reviewLaterBtn.addEventListener('click', () => closeModal('reviewModal'));
     }
 
     async function loadDestinations() {
       const local = readJSON(storageKey, null);
-      if (local && Array.isArray(local) && local.length) {
+      if (Array.isArray(local) && local.length) {
         state.destinations = local.map(normalizeDestination);
         return;
       }
@@ -1121,6 +1124,7 @@
           if (error) throw error;
           if (data && data.length) {
             state.destinations = data.map(normalizeDestination);
+            await loadRouteTags();
             writeJSON(storageKey, state.destinations);
             return;
           }
@@ -1134,6 +1138,33 @@
       writeJSON(storageKey, state.destinations);
     }
 
+    async function loadRouteTags() {
+      if (!sb || !state.destinations.length) return;
+      const ids = state.destinations.map(item => item.id);
+      const { data, error } = await sb.from(ROUTE_CATEGORIES_TABLE).select('route_id, category').in('route_id', ids);
+      if (error) throw error;
+      const byRoute = new Map();
+      (data || []).forEach(row => {
+        if (!byRoute.has(row.route_id)) byRoute.set(row.route_id, []);
+        byRoute.get(row.route_id).push(row.category);
+      });
+      state.destinations.forEach(item => {
+        const tags = byRoute.get(item.id);
+        if (tags && tags.length) item.tags = cleanTags(tags);
+      });
+    }
+
+    async function loadTags() {
+      state.tags = cleanTags(state.destinations.flatMap(item => item.tags || [item.topic, item.subtopic, item.category]));
+      if (sb) {
+        try {
+          const { data } = await sb.from(TAXONOMY_TABLE).select('topic, subtopic').order('topic', { ascending: true });
+          if (data && data.length) state.tags = cleanTags([...state.tags, ...data.flatMap(row => [row.topic, row.subtopic])]);
+        } catch (error) { console.warn(error); }
+      }
+      renderTagOptions();
+    }
+
     function loadPendingReview() {
       state.pendingReview = readJSON(pendingKey, []);
     }
@@ -1145,12 +1176,36 @@
       el.modeStatus.textContent = enabled ? 'Mode: Development' : 'Mode: Showcase';
       localStorage.setItem(devKey, String(enabled));
       if (!options.silent) showBanner(enabled ? 'Development mode enabled.' : 'Showcase mode enabled.');
+      if (state.groups.length) renderGrid();
+    }
+
+    function rebuildGroups() {
+      const byGroup = new Map();
+      state.destinations.forEach(item => {
+        item = normalizeDestination(item);
+        if (!byGroup.has(item.group_id)) byGroup.set(item.group_id, []);
+        byGroup.get(item.group_id).push(item);
+      });
+      state.groups = [...byGroup.entries()].map(([groupId, versions]) => {
+        versions.sort((a, b) => new Date(b.uploaded_at || 0) - new Date(a.uploaded_at || 0));
+        const preferredId = state.preferred[groupId] || versions.find(v => v.classification_status === 'preferred')?.id;
+        const active = versions.find(v => v.id === preferredId) || versions[0];
+        return { id: groupId, versions, active, latest: versions[0] };
+      }).sort((a, b) => new Date(b.active.uploaded_at || 0) - new Date(a.active.uploaded_at || 0));
+      state.destinations = state.destinations.map(normalizeDestination);
     }
 
     function buildFilters() {
-      const baseFilters = ['All', 'HTML Files', 'Live Links'];
-      const categoryFilters = unique([...state.categories, ...state.destinations.flatMap(item => item.categories || [item.category]).filter(Boolean)]);
-      const filters = unique([...baseFilters, ...categoryFilters]);
+      const counts = new Map();
+      state.groups.forEach(group => {
+        const topic = group.active.topic || 'Portfolio';
+        counts.set(topic, (counts.get(topic) || 0) + 1);
+      });
+      const topics = [...counts.entries()]
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .slice(0, 4)
+        .map(([topic]) => topic);
+      const filters = ['All', ...topics].slice(0, 5);
       if (!filters.includes(state.activeFilter)) state.activeFilter = 'All';
       el.filters.innerHTML = '';
       filters.forEach(filter => {
@@ -1167,49 +1222,66 @@
     }
 
     function applyFilters() {
+      rebuildGroups();
       buildFilters();
       const query = state.search;
-      state.filtered = state.destinations.filter(item => {
-        const itemCategories = item.categories || [item.category].filter(Boolean);
-        const matchesFilter = state.activeFilter === 'All' || item.type === state.activeFilter || itemCategories.includes(state.activeFilter) || item.topic === state.activeFilter;
-        const haystack = [item.title, item.topic, item.subtopic, ...itemCategories, item.group_label, item.group_id, item.address, item.url, item.description, statusLabel(item.website_status)].join(' ').toLowerCase();
+      state.filtered = state.groups.filter(group => {
+        const item = group.active;
+        const matchesFilter = state.activeFilter === 'All' || item.topic === state.activeFilter;
+        const haystack = [item.title, item.group_label, item.topic, item.subtopic, ...(item.tags || []), item.address, item.url, item.description, statusLabel(item.website_status), ...group.versions.map(v => v.source_name || v.title)].join(' ').toLowerCase();
         return matchesFilter && (!query || haystack.includes(query));
-      }).sort((a, b) => ((a.category || '') + (a.topic || '') + a.title).localeCompare((b.category || '') + (b.topic || '') + b.title));
+      }).sort((a, b) => new Date(b.active.uploaded_at || 0) - new Date(a.active.uploaded_at || 0));
       renderGrid();
     }
 
     function renderGrid() {
-      el.routeCount.textContent = state.destinations.length;
+      el.routeCount.textContent = state.groups.length;
       el.siteGrid.innerHTML = '';
       el.emptyState.classList.toggle('visible', state.filtered.length === 0);
 
-      state.filtered.forEach(item => {
+      state.filtered.forEach(group => {
+        const item = group.active;
         const node = el.cardTemplate.content.firstElementChild.cloneNode(true);
         node.dataset.id = item.id;
+        node.dataset.groupId = group.id;
         node.draggable = document.body.classList.contains('dev-mode');
+        node.style.cursor = 'pointer';
+
         const previewEl = node.querySelector('.preview');
         previewEl.className = 'preview ' + (item.image_url ? 'has-image' : (item.preview || 'portfolio'));
         if (item.image_url) previewEl.style.setProperty('--image-url', `url('${cssUrl(item.image_url)}')`);
-        node.querySelector('.preview h3').textContent = item.title;
+
+        node.querySelector('.preview h3').textContent = item.group_label || item.title;
         node.querySelector('.preview p').textContent = item.description || item.url;
         const meta = node.querySelector('.meta');
-        meta.textContent = (item.categories && item.categories[0]) || item.category || item.topic || item.type;
+        meta.textContent = item.topic || item.type || 'Project';
+        meta.classList.toggle('web', /web|design/i.test(item.topic || ''));
+        meta.classList.toggle('personal', /personal|ai|learning/i.test(item.topic || ''));
+        meta.classList.toggle('ui', /ui|tool/i.test(item.topic || ''));
+
         const statusEl = node.querySelector('.status-dot');
         statusEl.dataset.status = item.website_status || 'working';
         statusEl.title = statusLabel(item.website_status);
-        meta.classList.toggle('web', /web/i.test(item.topic + ' ' + item.category));
-        meta.classList.toggle('personal', /personal|ai/i.test(item.topic + ' ' + item.category));
-        meta.classList.toggle('ui', /ui/i.test(item.topic + ' ' + item.category));
-        node.querySelector('.card-title').textContent = item.title;
+        node.querySelector('.card-title').textContent = item.group_label || item.title;
         node.querySelector('.card-desc').textContent = item.description || item.url;
-        renderTags(node.querySelector('.tag-row'), [...(item.categories || []), item.topic, item.subtopic].filter(Boolean));
-        node.querySelector('.card-title').addEventListener('click', () => openViewer(item.id));
-        node.querySelector('.icon-btn').addEventListener('click', () => window.open(item.url, '_blank', 'noopener'));
-        node.querySelector('.more').addEventListener('click', () => openEdit(item.id));
-        node.addEventListener('click', () => state.selectedId = item.id);
+        renderTags(node.querySelector('.tag-row'), cleanTags([item.topic, item.subtopic, ...(item.tags || [])]));
+
+        const versionBadge = document.createElement('span');
+        versionBadge.className = 'tag-pill';
+        versionBadge.textContent = `${group.versions.length} version${group.versions.length === 1 ? '' : 's'}`;
+        node.querySelector('.tag-row').appendChild(versionBadge);
+
+        node.addEventListener('click', event => {
+          if (event.target.closest('button, a, input, select, textarea')) return;
+          openViewer(item.id);
+        });
+        node.querySelector('.card-title').addEventListener('click', event => { event.stopPropagation(); openViewer(item.id); });
+        node.querySelector('.icon-btn').addEventListener('click', event => { event.stopPropagation(); window.open(item.url, '_blank', 'noopener'); });
+        node.querySelector('.more').addEventListener('click', event => { event.stopPropagation(); openEdit(group.id); });
+
         node.addEventListener('dragstart', event => {
           if (!document.body.classList.contains('dev-mode')) { event.preventDefault(); return; }
-          state.draggedId = item.id;
+          state.draggedGroupId = group.id;
           node.classList.add('dragging');
           event.dataTransfer.effectAllowed = 'move';
         });
@@ -1224,28 +1296,28 @@
           event.preventDefault();
           node.classList.remove('drop-hint');
           if (!document.body.classList.contains('dev-mode')) return;
-          await reclassifyByDrop(state.draggedId, item.id);
+          await reclassifyByDrop(state.draggedGroupId, group.id);
         });
         el.siteGrid.appendChild(node);
       });
     }
 
-    async function reclassifyByDrop(sourceId, targetId) {
-      if (!sourceId || !targetId || sourceId === targetId) return;
-      const source = state.destinations.find(x => x.id === sourceId);
-      const target = state.destinations.find(x => x.id === targetId);
+    async function reclassifyByDrop(sourceGroupId, targetGroupId) {
+      if (!sourceGroupId || !targetGroupId || sourceGroupId === targetGroupId) return;
+      const source = getGroup(sourceGroupId);
+      const target = getGroup(targetGroupId);
       if (!source || !target) return;
-      source.topic = target.topic;
-      source.subtopic = target.subtopic;
-      source.group_label = target.group_label;
-      source.category = target.category;
-      source.categories = target.categories ? [...target.categories] : [target.category].filter(Boolean);
-      source.group_id = target.group_id;
-      source.manual_classification = true;
-      source.reviewed_at = new Date().toISOString();
+      const targetItem = target.active;
+      source.versions.forEach(version => {
+        version.topic = targetItem.topic;
+        version.subtopic = targetItem.subtopic;
+        version.tags = cleanTags([targetItem.topic, targetItem.subtopic, ...(targetItem.tags || [])]);
+        version.category = version.tags[0] || targetItem.topic;
+        version.manual_classification = true;
+        version.reviewed_at = new Date().toISOString();
+      });
       await persistAll();
       applyFilters();
-      showBanner(`Moved “${source.title}” into ${target.topic || 'the selected group'}.`);
     }
 
     async function handleAction(action) {
@@ -1254,10 +1326,10 @@
         case 'focusSearch': el.searchInput.focus(); break;
         case 'focusAdd': el.newTitle.focus(); break;
         case 'upload': el.topbarUploadInput.click(); break;
-        case 'openSelected': openViewer(state.selectedId || state.filtered[0]?.id); break;
-        case 'renameSelected': openEdit(state.selectedId || state.filtered[0]?.id); break;
-        case 'editSelected': openEdit(state.selectedId || state.filtered[0]?.id); break;
-        case 'manageCategories': openCategoryManager(); break;
+        case 'openSelected': openViewer(state.selectedId || state.filtered[0]?.active?.id); break;
+        case 'renameSelected':
+        case 'editSelected': openEdit(state.selectedGroupId || state.filtered[0]?.id); break;
+        case 'manageCategories': openTopicIndex(); break;
         case 'review': openReviewModal(); break;
         case 'sync': await syncSupabase(); break;
         case 'clearState': await clearState(); break;
@@ -1267,14 +1339,43 @@
     function openViewer(id) {
       const item = state.destinations.find(x => x.id === id);
       if (!item) { showBanner('Select a project first.'); return; }
-      state.selectedId = id;
-      el.viewerTitle.textContent = item.title;
-      el.viewerAddress.textContent = item.url;
+      const group = getGroup(item.group_id);
+      state.selectedId = item.id;
+      state.selectedGroupId = item.group_id;
+      el.viewerTitle.textContent = item.group_label || item.title;
+      el.viewerAddress.textContent = [item.topic, item.subtopic, versionLabel(item)].filter(Boolean).join(' · ');
       el.openOriginal.href = item.url;
       el.viewerFrame.src = item.url;
       item.last_accessed_at = new Date().toISOString();
+      renderViewerVersionPicker(group, item.id);
       persistAll({ skipRemoteLocalOnly: true });
       document.body.classList.add('viewer-open');
+    }
+
+    function renderViewerVersionPicker(group, activeId) {
+      const actions = document.querySelector('.viewer-actions');
+      actions.querySelectorAll('.version-select, .version-note').forEach(x => x.remove());
+      if (!group || group.versions.length < 2) return;
+      const select = document.createElement('select');
+      select.className = 'version-select';
+      select.setAttribute('aria-label', 'Project version');
+      group.versions.forEach(version => {
+        const option = document.createElement('option');
+        option.value = version.id;
+        option.textContent = versionLabel(version);
+        option.selected = version.id === activeId;
+        select.appendChild(option);
+      });
+      select.addEventListener('change', async () => {
+        const next = state.destinations.find(x => x.id === select.value);
+        if (!next) return;
+        state.preferred[group.id] = next.id;
+        markPreferred(group.id, next.id);
+        await persistAll();
+        openViewer(next.id);
+        applyFilters();
+      });
+      actions.prepend(select);
     }
 
     function closeViewer() {
@@ -1282,82 +1383,75 @@
       el.viewerFrame.src = 'about:blank';
     }
 
-    function openEdit(id) {
+    function openEdit(groupId) {
       if (!document.body.classList.contains('dev-mode')) { showBanner('Turn on development mode to edit.'); return; }
-      const item = state.destinations.find(x => x.id === id);
-      if (!item) { showBanner('Select a project first.'); return; }
-      state.selectedId = id;
-      el.editName.value = item.title || '';
+      const group = getGroup(groupId);
+      if (!group) { showBanner('Select a project first.'); return; }
+      const item = group.active;
+      state.selectedGroupId = group.id;
+      state.selectedId = item.id;
+
+      el.editName.value = item.group_label || item.title || '';
       el.editUrl.value = item.url || '';
       el.editStatus.value = item.website_status || 'working';
       el.editDescription.value = item.description || '';
-      el.editCategories.value = (item.categories && item.categories.length ? item.categories : [item.category || item.group_label].filter(Boolean)).join(', ');
+      el.editCategories.value = cleanTags(item.tags || [item.topic, item.subtopic]).join(', ');
       el.editTopic.value = item.topic || '';
       el.editSubtopic.value = item.subtopic || '';
       el.editImageUrl.value = item.image_url || '';
       el.editImageFile.value = '';
       el.editType.value = item.type || '';
+      ensureEditVersionPicker(group, item.id);
       openModal('editModal');
       setTimeout(() => el.editName.focus(), 60);
     }
 
-    function openCategoryManager() {
-      if (!document.body.classList.contains('dev-mode')) { showBanner('Turn on development mode to edit categories.'); return; }
-      renderCategoryManager();
+    function ensureEditVersionPicker(group, activeId) {
+      let wrapper = document.getElementById('editVersionWrapper');
+      if (!wrapper) {
+        wrapper = document.createElement('div');
+        wrapper.id = 'editVersionWrapper';
+        wrapper.className = 'field';
+        wrapper.style.marginTop = '12px';
+        wrapper.innerHTML = '<label for="editVersionSelect">Route version</label><select id="editVersionSelect" class="version-select" style="border-radius:10px;max-width:none;width:100%;"></select>';
+        el.editForm.insertBefore(wrapper, el.editForm.querySelector('.modal-actions'));
+      }
+      const select = document.getElementById('editVersionSelect');
+      select.innerHTML = '';
+      group.versions.forEach(version => {
+        const option = document.createElement('option');
+        option.value = version.id;
+        option.textContent = versionLabel(version);
+        option.selected = version.id === activeId;
+        select.appendChild(option);
+      });
+      select.onchange = () => {
+        const next = state.destinations.find(x => x.id === select.value);
+        if (!next) return;
+        state.selectedId = next.id;
+        el.editUrl.value = next.url || '';
+        el.editStatus.value = next.website_status || 'working';
+        el.editDescription.value = next.description || '';
+        el.editImageUrl.value = next.image_url || '';
+        el.editType.value = next.type || '';
+      };
+    }
+
+    function openTopicIndex() {
+      renderTopicIndex();
       openModal('categoryModal');
     }
 
-    async function addCategory(name) {
-      const category = String(name || '').trim();
-      if (!category) return;
-      state.categories = unique([...state.categories, category]);
-      await persistCategories();
-      renderCategoryOptions();
-      renderCategoryManager();
-      buildFilters();
-      showBanner(`Added category “${category}”.`);
-    }
-
-    async function removeCategory(category) {
-      const ok = confirm(`Remove “${category}” from the category list and from any project cards?`);
-      if (!ok) return;
-      state.categories = state.categories.filter(x => x !== category);
-      state.destinations.forEach(item => {
-        item.categories = (item.categories || [item.category]).filter(x => x && x !== category);
-        if (item.category === category || item.group_label === category) {
-          item.category = item.categories[0] || '';
-          item.group_label = item.category;
-          item.group_id = slugify(item.category);
-        }
-      });
-      await persistAll();
-      if (sb) {
-        try { await sb.from(CATEGORIES_TABLE).delete().eq('name', category); }
-        catch (error) { console.warn(error); }
-      }
-      await persistCategories();
-      renderCategoryOptions();
-      renderCategoryManager();
-      applyFilters();
-      showBanner(`Removed category “${category}”.`);
-    }
-
-    function renderCategoryManager() {
+    function renderTopicIndex() {
       el.categoryList.innerHTML = '';
-      unique(state.categories).forEach(category => {
+      const topics = cleanTags(state.groups.map(group => group.active.topic)).slice(0, 5);
+      topics.forEach(topic => {
         const token = document.createElement('span');
         token.className = 'category-token';
-        token.innerHTML = `<span>${escapeHTML(category)}</span><button type="button" aria-label="Remove ${escapeAttr(category)}">×</button>`;
-        token.querySelector('button').addEventListener('click', () => removeCategory(category));
+        token.innerHTML = `<span>${escapeHTML(topic)}</span>`;
         el.categoryList.appendChild(token);
       });
-      if (!el.categoryList.children.length) el.categoryList.textContent = 'No categories yet.';
-    }
-
-    function renderCategoryOptions() {
-      const options = document.getElementById('categoryOptions');
-      if (!options) return;
-      options.innerHTML = unique(state.categories).map(category => `<option value="${escapeAttr(category)}"></option>`).join('');
+      if (!el.categoryList.children.length) el.categoryList.textContent = 'No topics yet.';
     }
 
     async function uploadHtmlFiles(fileList) {
@@ -1365,27 +1459,22 @@
       const files = [...fileList].filter(file => /\.html?$/i.test(file.name));
       if (!files.length) { showBanner('Choose one or more .html files.'); return; }
 
-      const existingNames = new Set(state.destinations.map(x => (x.source_name || x.original_name || x.title).toLowerCase()));
       const created = [];
-      const skipped = [];
-
       for (const file of files) {
-        if (existingNames.has(file.name.toLowerCase())) { skipped.push(file.name); continue; }
         const suggestion = suggestClassification(file.name);
         const id = uid();
-        const filePath = `${id}/${file.name.replace(/[^a-z0-9._-]/gi, '-')}`;
+        const groupId = projectGroupId(file.name);
+        const filePath = `${groupId}/${id}-${file.name.replace(/[^a-z0-9._-]/gi, '-')}`;
         let publicUrl = URL.createObjectURL(file);
         let localOnly = true;
 
         if (sb) {
           try {
-            const { error: uploadError } = await sb.storage
-              .from(UPLOAD_BUCKET)
-              .upload(filePath, file, {
-                contentType: 'text/html',
-                metadata: { mimetype: 'text/html', source_name: file.name },
-                upsert: false
-              });
+            const { error: uploadError } = await sb.storage.from(UPLOAD_BUCKET).upload(filePath, file, {
+              contentType: 'text/html',
+              metadata: { mimetype: 'text/html', source_name: file.name },
+              upsert: false
+            });
             if (uploadError) throw uploadError;
             const { data: publicData } = sb.storage.from(UPLOAD_BUCKET).getPublicUrl(filePath);
             publicUrl = publicData.publicUrl;
@@ -1396,23 +1485,26 @@
           }
         }
 
+        const existingGroup = state.destinations.find(x => x.group_id === groupId);
+        const groupLabel = existingGroup?.group_label || cleanProjectName(file.name);
         const item = normalizeDestination({
           id,
           mode: 'upload',
           type: 'HTML Files',
           title: cleanName(file.name),
-          description: 'Uploaded HTML project.',
+          description: existingGroup?.description || 'Uploaded HTML project.',
           website_status: 'under_construction',
           address: publicUrl,
           url: publicUrl,
           source_name: file.name,
           file_path: filePath,
-          topic: suggestion.topic,
-          subtopic: suggestion.subtopic,
-          group_label: suggestion.category,
-          categories: [suggestion.category],
-          group_id: slugify(suggestion.category),
-          classification_status: 'suggested',
+          topic: existingGroup?.topic || suggestion.topic,
+          subtopic: existingGroup?.subtopic || suggestion.subtopic,
+          group_label: groupLabel,
+          group_id: groupId,
+          tags: existingGroup?.tags || [suggestion.topic, suggestion.subtopic],
+          category: suggestion.topic,
+          classification_status: 'version',
           manual_classification: false,
           uploaded_at: new Date().toISOString(),
           preview: suggestion.preview,
@@ -1422,30 +1514,29 @@
         state.destinations.push(item);
         state.pendingReview.push(item);
         created.push(item);
-        existingNames.add(file.name.toLowerCase());
       }
 
       writeJSON(pendingKey, state.pendingReview);
       await persistAll({ skipRemoteLocalOnly: true });
+      rebuildGroups();
       applyFilters();
       el.topbarUploadInput.value = '';
       el.panelUploadInput.value = '';
       if (created.length) openReviewModal();
-      const message = `${created.length} upload${created.length === 1 ? '' : 's'} added` + (skipped.length ? `; ${skipped.length} duplicate${skipped.length === 1 ? '' : 's'} ignored.` : '.');
-      showBanner(message);
+      showBanner(`${created.length} upload${created.length === 1 ? '' : 's'} added.`);
     }
 
     function suggestClassification(fileName) {
       const name = fileName.toLowerCase();
-      if (name.includes('matcha')) return { category: 'Matcha', topic: 'Tooling', subtopic: 'Food', preview: 'matcha' };
-      if (name.includes('ai') || name.includes('llm') || name.includes('genai') || name.includes('chatbot')) return { category: 'AI Learning', topic: 'Learning', subtopic: 'AI', preview: 'dark' };
-      if (name.includes('japanese') || name.includes('flash')) return { category: 'Learning', topic: 'Personal Project', subtopic: 'Language', preview: 'flash' };
-      if (name.includes('workout') || name.includes('fitness')) return { category: 'Fitness', topic: 'Web Design', subtopic: 'Fitness', preview: 'workout' };
-      if (name.includes('smoothie')) return { category: 'Food', topic: 'Web Design', subtopic: 'Food', preview: 'smoothie' };
-      if (name.includes('navigator') || name.includes('library')) return { category: 'Tools', topic: 'Tooling', subtopic: 'Navigator', preview: 'dark' };
-      if (name.includes('travel')) return { category: 'Travel', topic: 'Web Design', subtopic: 'Travel', preview: 'travel' };
-      if (name.includes('check')) return { category: 'Productivity', topic: 'UI System', subtopic: 'Tasks', preview: 'checklist' };
-      return { category: 'Web Design', topic: 'Web Design', subtopic: 'General', preview: 'portfolio' };
+      if (name.includes('matcha')) return { topic: 'Matcha', subtopic: 'Tracker', preview: 'matcha' };
+      if (name.includes('ai') || name.includes('llm') || name.includes('genai') || name.includes('chatbot')) return { topic: 'AI Learning', subtopic: 'Experiment', preview: 'dark' };
+      if (name.includes('japanese') || name.includes('flash')) return { topic: 'Learning', subtopic: 'Japanese', preview: 'flash' };
+      if (name.includes('workout') || name.includes('fitness')) return { topic: 'Fitness', subtopic: 'Workout', preview: 'workout' };
+      if (name.includes('smoothie')) return { topic: 'Food', subtopic: 'Smoothie', preview: 'smoothie' };
+      if (name.includes('navigator') || name.includes('library')) return { topic: 'Tools', subtopic: 'Navigator', preview: 'dark' };
+      if (name.includes('travel')) return { topic: 'Travel', subtopic: 'Guide', preview: 'travel' };
+      if (name.includes('check')) return { topic: 'Productivity', subtopic: 'Checklist', preview: 'checklist' };
+      return { topic: firstTopic() || 'Portfolio', subtopic: 'General', preview: 'portfolio' };
     }
 
     function openReviewModal() {
@@ -1467,9 +1558,9 @@
         row.innerHTML = `
           <strong>${escapeHTML(item.title)}</strong>
           <div class="review-grid">
-            <label class="field"><span>Category</span><input data-review-field="category" value="${escapeAttr(item.category)}"></label>
             <label class="field"><span>Topic</span><input data-review-field="topic" value="${escapeAttr(item.topic)}"></label>
             <label class="field"><span>Subtopic</span><input data-review-field="subtopic" value="${escapeAttr(item.subtopic)}"></label>
+            <label class="field"><span>Tags</span><input data-review-field="tags" value="${escapeAttr(cleanTags(item.tags || [item.topic, item.subtopic]).join(', '))}"></label>
           </div>
         `;
         el.reviewList.appendChild(row);
@@ -1479,24 +1570,25 @@
     function acceptSuggestions() {
       state.pendingReview.forEach(item => {
         const suggestion = suggestClassification(item.original_name || item.title);
-        item.category = suggestion.category;
-        item.group_label = suggestion.category;
-        item.group_id = slugify(suggestion.category);
         item.topic = suggestion.topic;
         item.subtopic = suggestion.subtopic;
+        item.tags = cleanTags([suggestion.topic, suggestion.subtopic]);
         item.preview = suggestion.preview;
       });
       renderReviewList();
-      showBanner('Suggestions accepted. Save placements when ready.');
     }
 
     async function savePlacements() {
       [...el.reviewList.querySelectorAll('.review-item')].forEach(row => {
         const item = state.destinations.find(x => x.id === row.dataset.id);
         if (!item) return;
-        row.querySelectorAll('[data-review-field]').forEach(input => item[input.dataset.reviewField] = input.value.trim());
-        item.group_label = item.category;
-        item.group_id = slugify(item.category);
+        const topic = row.querySelector('[data-review-field="topic"]').value.trim() || item.topic;
+        const subtopic = row.querySelector('[data-review-field="subtopic"]').value.trim() || item.subtopic;
+        const tags = parseList(row.querySelector('[data-review-field="tags"]').value);
+        item.topic = topic;
+        item.subtopic = subtopic;
+        item.tags = cleanTags([topic, subtopic, ...tags]);
+        item.category = item.tags[0] || topic;
         item.manual_classification = true;
         item.classification_status = 'reviewed';
         item.reviewed_at = new Date().toISOString();
@@ -1505,36 +1597,36 @@
       writeJSON(pendingKey, state.pendingReview);
       await persistAll({ skipRemoteLocalOnly: true });
       closeModal('reviewModal');
+      rebuildGroups();
       applyFilters();
-      showBanner('Placements saved.');
-    }
-
-    async function saveDestination(item) {
-      state.destinations.push(item);
-      await persistAll();
-      applyFilters();
+      showBanner('Saved.');
     }
 
     async function persistAll(options = {}) {
+      state.tags = cleanTags(state.destinations.flatMap(item => item.tags || [item.topic, item.subtopic]));
       writeJSON(storageKey, state.destinations);
+      writeJSON(preferredKey, state.preferred);
+      renderTagOptions();
       if (!sb) return;
       const rows = options.skipRemoteLocalOnly ? state.destinations.filter(x => !x.local_only && !(x.url || '').startsWith('blob:')) : state.destinations;
       try {
         const routeRows = rows.map(toRouteRow);
-        const { error } = await sb.from(ROUTES_TABLE).upsert(routeRows, { onConflict: 'id' });
-        if (error) throw error;
+        if (routeRows.length) {
+          const { error } = await sb.from(ROUTES_TABLE).upsert(routeRows, { onConflict: 'id' });
+          if (error) throw error;
+        }
         await upsertTaxonomy(routeRows);
-        await upsertCategories(rows);
+        await upsertTags(rows);
       } catch (error) {
         console.warn(error);
-        showBanner('Saved locally. Supabase sync needs routes/taxonomy credentials or policies.');
+        showBanner('Saved locally. Supabase sync needs storage/table policies.');
       }
     }
 
     async function syncSupabase() {
       if (!sb) { showBanner('Add Supabase URL and anon key before syncing.'); return; }
       await persistAll({ skipRemoteLocalOnly: true });
-      showBanner('Synced durable routes and taxonomy to Supabase. Local blob uploads stay browser-only.');
+      showBanner('Synced.');
     }
 
     async function clearState() {
@@ -1557,22 +1649,25 @@
 
     function normalizeDestination(raw) {
       const url = raw.url || raw.address || '#';
-      const categories = parseCategories(raw.categories || raw.category || raw.group_label || raw.family || inferCategory(raw) || '');
-      const category = categories[0] || '';
+      const groupLabel = raw.group_label || raw.project_title || raw.title || raw.source_name || 'Untitled';
+      const groupId = raw.group_id || projectGroupId(groupLabel);
+      const topic = raw.topic || raw.category || 'Portfolio';
+      const subtopic = raw.subtopic || '';
+      const tags = cleanTags(raw.tags || raw.categories || [topic, subtopic, raw.category, raw.group_label]);
       return {
         id: raw.id || uid(),
         mode: raw.mode || (raw.file_path ? 'upload' : 'url'),
-        title: (raw.title || raw.name || raw.source_name || 'Untitled').trim(),
+        title: (raw.title || raw.name || raw.source_name || groupLabel || 'Untitled').trim(),
         description: raw.description || '',
         address: raw.address || url,
         url,
         type: raw.type || (raw.mode === 'upload' ? 'HTML Files' : 'Live Links'),
-        topic: raw.topic || 'Web Design',
-        subtopic: raw.subtopic || '',
-        category,
-        categories,
-        group_label: raw.group_label || category,
-        group_id: raw.group_id || slugify(category),
+        topic,
+        subtopic,
+        category: raw.category || tags[0] || topic,
+        tags,
+        group_label: groupLabel,
+        group_id: groupId,
         classification_status: raw.classification_status || '',
         manual_classification: Boolean(raw.manual_classification),
         website_status: raw.website_status || raw.status || 'working',
@@ -1580,7 +1675,7 @@
         image_path: raw.image_path || raw.preview_image_path || '',
         source_name: raw.source_name || raw.original_name || raw.originalName || '',
         file_path: raw.file_path || '',
-        preview: raw.preview || previewFromRecord(raw),
+        preview: raw.preview || previewFromText([raw.title, topic, subtopic, raw.source_name].join(' ')),
         original_name: raw.original_name || raw.originalName || raw.source_name || '',
         local_only: Boolean(raw.local_only),
         uploaded_at: raw.uploaded_at || raw.created_at || new Date().toISOString(),
@@ -1603,8 +1698,8 @@
         file_path: item.file_path || null,
         topic: item.topic || null,
         subtopic: item.subtopic || null,
-        group_label: item.category || item.group_label || null,
-        group_id: item.group_id || slugify(item.category || item.group_label || ''),
+        group_label: item.group_label || item.title || null,
+        group_id: item.group_id || projectGroupId(item.group_label || item.title || item.source_name || ''),
         classification_status: item.classification_status || null,
         manual_classification: Boolean(item.manual_classification),
         uploaded_at: item.uploaded_at || new Date().toISOString(),
@@ -1619,71 +1714,24 @@
 
     async function upsertTaxonomy(routeRows) {
       if (!sb) return;
-      const taxonomyRows = unique(routeRows
-        .filter(row => row.topic && row.subtopic)
-        .map(row => `${row.topic}|||${row.subtopic}`))
-        .map(value => {
-          const [topic, subtopic] = value.split('|||');
-          return { topic, subtopic };
-        });
+      const taxonomyRows = unique(routeRows.filter(row => row.topic && row.subtopic).map(row => `${row.topic}|||${row.subtopic}`)).map(value => {
+        const [topic, subtopic] = value.split('|||');
+        return { topic, subtopic };
+      });
       if (!taxonomyRows.length) return;
       const { error } = await sb.from(TAXONOMY_TABLE).upsert(taxonomyRows, { onConflict: 'topic,subtopic' });
       if (error) throw error;
     }
 
-    async function loadCategories() {
-      const localCategories = unique(readJSON('jenn:portfolio-categories:v1', []));
-      const fromRoutes = unique(state.destinations.flatMap(item => item.categories || [item.category]).filter(Boolean));
-      state.categories = unique([...localCategories, ...fromRoutes, 'Matcha', 'AI Learning', 'Web Design', 'Tools']);
-      if (sb) {
-        try {
-          const { data, error } = await sb.from(CATEGORIES_TABLE).select('name').order('name', { ascending: true });
-          if (error) throw error;
-          if (data && data.length) state.categories = unique([...state.categories, ...data.map(row => row.name)]);
-          await loadRouteCategories();
-        } catch (error) {
-          console.warn(error);
-        }
+    async function upsertTags(items) {
+      if (!sb) return;
+      const allTags = cleanTags(items.flatMap(item => item.tags || [item.topic, item.subtopic]));
+      const categoryRows = allTags.map(name => ({ name, slug: slugify(name), created_at: new Date().toISOString() }));
+      if (categoryRows.length) {
+        const { error: catError } = await sb.from(CATEGORIES_TABLE).upsert(categoryRows, { onConflict: 'slug' });
+        if (catError) console.warn(catError);
       }
-      renderCategoryOptions();
-      writeJSON('jenn:portfolio-categories:v1', state.categories);
-    }
-
-    async function loadRouteCategories() {
-      if (!sb || !state.destinations.length) return;
-      const ids = state.destinations.map(item => item.id);
-      const { data, error } = await sb.from(ROUTE_CATEGORIES_TABLE).select('route_id, category').in('route_id', ids);
-      if (error) throw error;
-      const byRoute = new Map();
-      (data || []).forEach(row => {
-        if (!byRoute.has(row.route_id)) byRoute.set(row.route_id, []);
-        byRoute.get(row.route_id).push(row.category);
-      });
-      state.destinations.forEach(item => {
-        const cats = byRoute.get(item.id);
-        if (cats && cats.length) {
-          item.categories = unique(cats);
-          item.category = item.categories[0] || '';
-          item.group_label = item.group_label || item.category;
-        }
-      });
-    }
-
-    async function persistCategories() {
-      writeJSON('jenn:portfolio-categories:v1', state.categories);
-      if (!sb) return;
-      const rows = unique(state.categories).map(name => ({ name, slug: slugify(name) }));
-      if (!rows.length) return;
-      const { error } = await sb.from(CATEGORIES_TABLE).upsert(rows, { onConflict: 'slug' });
-      if (error) console.warn(error);
-    }
-
-    async function upsertCategories(items) {
-      if (!sb) return;
-      const categories = unique([...state.categories, ...items.flatMap(item => item.categories || [item.category]).filter(Boolean)]);
-      state.categories = categories;
-      await persistCategories();
-      const linkRows = items.flatMap(item => (item.categories || [item.category]).filter(Boolean).map(category => ({ route_id: item.id, category })));
+      const linkRows = items.flatMap(item => cleanTags(item.tags || [item.topic, item.subtopic]).map(category => ({ route_id: item.id, category, created_at: new Date().toISOString() })));
       if (!linkRows.length) return;
       const routeIds = unique(items.map(item => item.id));
       await sb.from(ROUTE_CATEGORIES_TABLE).delete().in('route_id', routeIds);
@@ -1712,16 +1760,62 @@
       }
     }
 
-    function inferCategory(raw) {
-      const text = [raw.title, raw.topic, raw.subtopic, raw.source_name, raw.url].join(' ').toLowerCase();
-      if (text.includes('matcha')) return 'Matcha';
-      if (text.includes('ai') || text.includes('llm') || text.includes('genai')) return 'AI Learning';
-      if (text.includes('navigator') || text.includes('library')) return 'Tools';
-      return raw.type || '';
+    function markPreferred(groupId, itemId) {
+      state.destinations.forEach(item => {
+        if (item.group_id === groupId) item.classification_status = item.id === itemId ? 'preferred' : 'version';
+      });
     }
 
-    function previewFromRecord(raw) {
-      const text = [raw.title, raw.topic, raw.subtopic, raw.group_label, raw.source_name].join(' ').toLowerCase();
+    function getGroup(groupId) {
+      rebuildGroups();
+      return state.groups.find(group => group.id === groupId);
+    }
+
+    function renderTags(container, tags) {
+      container.innerHTML = '';
+      cleanTags(tags).slice(0, 3).forEach(tag => {
+        const pill = document.createElement('span');
+        pill.className = 'tag-pill';
+        pill.textContent = tag;
+        container.appendChild(pill);
+      });
+    }
+
+    function renderTagOptions() {
+      const options = document.getElementById('categoryOptions');
+      if (!options) return;
+      options.innerHTML = cleanTags(state.tags).slice(0, 50).map(tag => `<option value="${escapeAttr(tag)}"></option>`).join('');
+    }
+
+    function versionLabel(version) {
+      const date = version.uploaded_at ? new Date(version.uploaded_at) : null;
+      const dateLabel = date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown date';
+      return `${dateLabel} · ${version.source_name || version.title}`;
+    }
+
+    function statusLabel(status) {
+      return ({ working: 'Working', under_construction: 'Under construction', broken: 'Broken' })[status] || 'Working';
+    }
+
+    function firstTopic() {
+      const groupTopic = state.groups.find(group => group.active.topic)?.active.topic;
+      return groupTopic || 'Portfolio';
+    }
+
+    function projectGroupId(fileName) {
+      return slugify(cleanProjectName(fileName));
+    }
+
+    function cleanProjectName(fileName) {
+      return cleanName(fileName)
+        .replace(/\s*\(?\d+\)?\s*$/i, '')
+        .replace(/\s+(copy|final|latest|updated|new)$/i, '')
+        .replace(/\s+v\d+$/i, '')
+        .trim() || cleanName(fileName);
+    }
+
+    function previewFromText(text) {
+      text = String(text || '').toLowerCase();
       if (text.includes('matcha')) return 'matcha';
       if (text.includes('japanese') || text.includes('flash')) return 'flash';
       if (text.includes('workout') || text.includes('fitness')) return 'workout';
@@ -1733,33 +1827,12 @@
       return 'portfolio';
     }
 
-    function renderTags(container, tags) {
-      container.innerHTML = '';
-      unique(tags).slice(0, 3).forEach(tag => {
-        const pill = document.createElement('span');
-        pill.className = 'tag-pill';
-        pill.textContent = tag;
-        container.appendChild(pill);
-      });
-    }
-
-    function parseCategories(value) {
-      if (Array.isArray(value)) return unique(value);
-      return unique(String(value || '').split(',').map(x => x.trim()));
-    }
-
-
-    function statusLabel(status) {
-      return ({ working: 'Working', under_construction: 'Under construction', broken: 'Broken' })[status] || 'Working';
-    }
-
-    function cssUrl(value) {
-      return String(value || '').replace(/[\'"()]/g, encodeURIComponent);
-    }
-
+    function cssUrl(value) { return String(value || '').replace(/[\'"()]/g, encodeURIComponent); }
+    function parseList(value) { return Array.isArray(value) ? value : String(value || '').split(',').map(x => x.trim()); }
+    function cleanTags(list) { return unique(parseList(list).flatMap(x => Array.isArray(x) ? x : [x]).map(x => String(x || '').trim()).filter(Boolean)); }
     function unique(list) { return [...new Set(list.filter(Boolean).map(x => String(x).trim()).filter(Boolean))]; }
-    function slugify(value) { return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || null; }
-
+    function slugify(value) { return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'portfolio'; }
+    function daysAgo(days) { return new Date(Date.now() - days * 86400000).toISOString(); }
     function openModal(id) { document.getElementById(id).classList.add('visible'); }
     function closeModal(id) { document.getElementById(id).classList.remove('visible'); }
     function closeAllModals() { document.querySelectorAll('.modal-backdrop').forEach(x => x.classList.remove('visible')); }
@@ -1767,7 +1840,7 @@
       el.banner.textContent = message;
       el.banner.classList.add('visible');
       clearTimeout(showBanner.timer);
-      showBanner.timer = setTimeout(() => el.banner.classList.remove('visible'), 5200);
+      showBanner.timer = setTimeout(() => el.banner.classList.remove('visible'), 4200);
     }
     function readJSON(key, fallback) {
       try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
@@ -1775,7 +1848,7 @@
     }
     function writeJSON(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
     function uid() { return (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Math.random().toString(16).slice(2) + Date.now()); }
-    function cleanName(fileName) { return fileName.replace(/\.html?$/i, '').replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase()); }
+    function cleanName(fileName) { return String(fileName || '').replace(/\.html?$/i, '').replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase()); }
     function escapeHTML(value) { return String(value).replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c])); }
     function escapeAttr(value) { return escapeHTML(value).replace(/`/g, '&#96;'); }
   </script>
