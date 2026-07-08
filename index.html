@@ -818,6 +818,7 @@
           <label class="field"><span>Type</span><input id="editType" placeholder="Live Links" /></label>
         </div>
         <div class="modal-actions">
+          <button id="deleteEntryBtn" class="danger-btn" type="button">Delete Entry</button>
           <button class="ghost-btn" type="button" data-close-modal="editModal">Cancel</button>
           <button class="primary-btn" type="submit">Save Changes</button>
         </div>
@@ -888,16 +889,9 @@
     const supabaseReady = SUPABASE_URL.includes('supabase.co') && !SUPABASE_URL.includes('YOUR_PROJECT_ID') && !SUPABASE_ANON_KEY.includes('YOUR_');
     const sb = supabaseReady ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-    const storageKey = 'jenn:portfolio-routes:v3';
     const devKey = 'jenn:portfolio-dev-mode:v1';
     const pendingKey = 'jenn:portfolio-pending-review:v3';
     const preferredKey = 'jenn:portfolio-preferred-versions:v1';
-
-    const seedDestinations = [
-      { id: uid(), title: 'Matcha Tracker', url: 'https://example.com/matcha-tracker', type: 'HTML Files', topic: 'Matcha', subtopic: 'Tracker', group_label: 'Matcha Tracker', description: 'Habit tracker and analytics for matcha lovers.', preview: 'matcha', uploaded_at: daysAgo(1) },
-      { id: uid(), title: 'Japanese Flashcards', url: 'https://example.com/japanese-flashcards', type: 'HTML Files', topic: 'Learning', subtopic: 'Japanese', group_label: 'Japanese Flashcards', description: 'Spaced repetition flashcard app.', preview: 'flash', uploaded_at: daysAgo(2) },
-      { id: uid(), title: 'Smoothie Builder', url: 'https://example.com/smoothie', type: 'HTML Files', topic: 'Food', subtopic: 'Builder', group_label: 'Smoothie Builder', description: 'Interactive smoothie builder UI.', preview: 'smoothie', uploaded_at: daysAgo(3) }
-    ];
 
     const state = {
       destinations: [],
@@ -953,6 +947,7 @@
       editImageUrl: document.getElementById('editImageUrl'),
       editImageFile: document.getElementById('editImageFile'),
       editType: document.getElementById('editType'),
+      deleteEntryBtn: document.getElementById('deleteEntryBtn'),
       categoryModal: document.getElementById('categoryModal'),
       categoryForm: document.getElementById('categoryForm'),
       categoryNameInput: document.getElementById('categoryNameInput'),
@@ -1010,6 +1005,10 @@
 
       el.addForm.addEventListener('submit', async event => {
         event.preventDefault();
+        if (!sb) {
+          showBanner('Supabase is not configured. Add your Supabase URL and anon key before saving.');
+          return;
+        }
         const title = el.newTitle.value.trim();
         const topic = el.newTopic.value.trim() || firstTopic() || 'Portfolio';
         const subtopic = el.newSubtopic.value.trim() || 'General';
@@ -1107,6 +1106,8 @@
         showBanner('Saved.');
       });
 
+      el.deleteEntryBtn.addEventListener('click', deleteSelectedEntry);
+
       el.categoryForm.addEventListener('submit', event => event.preventDefault());
       document.querySelectorAll('[data-close-modal]').forEach(btn => btn.addEventListener('click', () => closeModal(btn.dataset.closeModal)));
       el.acceptSuggestionsBtn.addEventListener('click', acceptSuggestions);
@@ -1115,30 +1116,28 @@
     }
 
     async function loadDestinations() {
-      const local = readJSON(storageKey, null);
-      if (Array.isArray(local) && local.length) {
-        state.destinations = local.map(normalizeDestination);
+      state.destinations = [];
+
+      if (!sb) {
+        showBanner('Supabase is not configured. Add your Supabase URL and anon key in config.js.');
         return;
       }
 
-      if (sb) {
-        try {
-          const { data, error } = await sb.from(ROUTES_TABLE).select('*').order('uploaded_at', { ascending: false });
-          if (error) throw error;
-          if (data && data.length) {
-            state.destinations = data.map(normalizeDestination);
-            await loadRouteTags();
-            writeJSON(storageKey, state.destinations);
-            return;
-          }
-        } catch (error) {
-          console.warn(error);
-          showBanner('Could not load Supabase rows. Showing starter projects.');
-        }
-      }
+      try {
+        const { data, error } = await sb
+          .from(ROUTES_TABLE)
+          .select('*')
+          .order('uploaded_at', { ascending: false });
 
-      state.destinations = seedDestinations.map(normalizeDestination);
-      writeJSON(storageKey, state.destinations);
+        if (error) throw error;
+
+        state.destinations = (data || []).map(normalizeDestination);
+        await loadRouteTags();
+      } catch (error) {
+        console.error(error);
+        showBanner('Unable to load projects from Supabase.');
+        state.destinations = [];
+      }
     }
 
     async function loadRouteTags() {
@@ -1482,6 +1481,7 @@
       if (!document.body.classList.contains('dev-mode')) { showBanner('Turn on development mode to upload HTML.'); return; }
       const files = [...fileList].filter(file => /\.html?$/i.test(file.name));
       if (!files.length) { showBanner('Choose one or more .html files.'); return; }
+      if (!sb) { showBanner('Supabase is not configured. Add your Supabase URL and anon key before uploading.'); return; }
 
       const created = [];
       for (const file of files) {
@@ -1489,24 +1489,20 @@
         const id = uid();
         const groupId = projectGroupId(file.name);
         const filePath = `${groupId}/${id}-${file.name.replace(/[^a-z0-9._-]/gi, '-')}`;
-        let publicUrl = URL.createObjectURL(file);
-        let localOnly = true;
-
-        if (sb) {
-          try {
-            const { error: uploadError } = await sb.storage.from(UPLOAD_BUCKET).upload(filePath, file, {
-              contentType: 'text/html',
-              metadata: { mimetype: 'text/html', source_name: file.name },
-              upsert: false
-            });
-            if (uploadError) throw uploadError;
-            const { data: publicData } = sb.storage.from(UPLOAD_BUCKET).getPublicUrl(filePath);
-            publicUrl = publicData.publicUrl;
-            localOnly = false;
-          } catch (error) {
-            console.warn(error);
-            showBanner(`Could not upload ${file.name} to Supabase Storage. Kept it locally for this browser session.`);
-          }
+        let publicUrl = '';
+        try {
+          const { error: uploadError } = await sb.storage.from(UPLOAD_BUCKET).upload(filePath, file, {
+            contentType: 'text/html',
+            metadata: { mimetype: 'text/html', source_name: file.name },
+            upsert: false
+          });
+          if (uploadError) throw uploadError;
+          const { data: publicData } = sb.storage.from(UPLOAD_BUCKET).getPublicUrl(filePath);
+          publicUrl = publicData.publicUrl;
+        } catch (error) {
+          console.warn(error);
+          showBanner(`Could not upload ${file.name} to Supabase Storage. No local fallback was saved.`);
+          continue;
         }
 
         const existingGroup = state.destinations.find(x => x.group_id === groupId);
@@ -1532,7 +1528,7 @@
           manual_classification: false,
           uploaded_at: new Date().toISOString(),
           preview: suggestion.preview,
-          local_only: localOnly,
+          local_only: false,
           original_name: file.name
         });
         state.destinations.push(item);
@@ -1626,9 +1622,57 @@
       showBanner('Saved.');
     }
 
+    async function deleteSelectedEntry() {
+      if (!document.body.classList.contains('dev-mode')) {
+        showBanner('Turn on development mode to delete.');
+        return;
+      }
+
+      const item = state.destinations.find(x => x.id === state.selectedId);
+      if (!item) {
+        showBanner('Select a project first.');
+        return;
+      }
+
+      const label = item.group_label || item.title || 'this entry';
+      const ok = confirm(`Delete ${label}? This removes this entry from Supabase and from the page.`);
+      if (!ok) return;
+
+      try {
+        if (sb && !item.local_only && item.id) {
+          await sb.from(ROUTE_CATEGORIES_TABLE).delete().eq('route_id', item.id);
+          const { error } = await sb.from(ROUTES_TABLE).delete().eq('id', item.id);
+          if (error) throw error;
+
+          if (item.file_path) {
+            const { error: storageError } = await sb.storage.from(UPLOAD_BUCKET).remove([item.file_path]);
+            if (storageError) console.warn(storageError);
+          }
+          if (item.image_path) {
+            const { error: imageStorageError } = await sb.storage.from(UPLOAD_BUCKET).remove([item.image_path]);
+            if (imageStorageError) console.warn(imageStorageError);
+          }
+        }
+
+        state.destinations = state.destinations.filter(x => x.id !== item.id);
+        state.pendingReview = state.pendingReview.filter(x => x.id !== item.id);
+        if (state.preferred[item.group_id] === item.id) delete state.preferred[item.group_id];
+
+        writeJSON(pendingKey, state.pendingReview);
+        writeJSON(preferredKey, state.preferred);
+
+        closeAllModals();
+        rebuildGroups();
+        applyFilters();
+        showBanner('Deleted.');
+      } catch (error) {
+        console.error(error);
+        showBanner('Could not delete this entry from Supabase. Check table policies.');
+      }
+    }
+
     async function persistAll(options = {}) {
       state.tags = cleanTags(state.destinations.flatMap(item => item.tags || [item.topic, item.subtopic]));
-      writeJSON(storageKey, state.destinations);
       writeJSON(preferredKey, state.preferred);
       renderTagOptions();
       if (!sb) return;
@@ -1764,8 +1808,7 @@
     }
 
     async function uploadPreviewImage(file, ownerId = uid()) {
-      const localUrl = URL.createObjectURL(file);
-      if (!sb) return { image_url: localUrl, image_path: '' };
+      if (!sb) return { image_url: '', image_path: '' };
       const ext = (file.name.split('.').pop() || 'png').replace(/[^a-z0-9]/gi, '').toLowerCase();
       const path = `previews/${ownerId}-${Date.now()}.${ext}`;
       try {
@@ -1779,8 +1822,8 @@
         return { image_url: data.publicUrl, image_path: path };
       } catch (error) {
         console.warn(error);
-        showBanner('Could not upload preview image to Supabase. Using a local preview for this browser session.');
-        return { image_url: localUrl, image_path: '' };
+        showBanner('Could not upload preview image to Supabase. No local preview was saved.');
+        return { image_url: '', image_path: '' };
       }
     }
 
