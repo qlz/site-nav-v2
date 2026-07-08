@@ -1341,6 +1341,12 @@
     async function openViewer(id) {
       const item = state.destinations.find(x => x.id === id);
       if (!item) { showBanner('Select a project first.'); return; }
+
+      // Live links should open directly instead of using the embedded viewer.
+      if (!isHtmlLike(item)) {
+        window.open(item.url, "_blank", "noopener");
+        return;
+      }
       const group = getGroup(item.group_id);
       state.selectedId = item.id;
       state.selectedGroupId = item.group_id;
