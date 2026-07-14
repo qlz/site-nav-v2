@@ -1,1978 +1,509 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Jenn Lee — Portfolio Navigator</title>
-  <meta name="description" content="My curated portfolio of projects and live websites. Many of these are still in development" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./config.js"></script>
-  <style>
-    :root {
-      --bg: #fbfaf8;
-      --paper: rgba(255,255,255,.82);
-      --paper-solid: #fffefd;
-      --ink: #171513;
-      --muted: #756f68;
-      --faint: #aaa39b;
-      --line: rgba(28, 24, 20, .11);
-      --line-strong: rgba(28, 24, 20, .18);
-      --shadow: 0 18px 50px rgba(40, 34, 28, .08), 0 2px 12px rgba(40, 34, 28, .07);
-      --shadow-soft: 0 10px 34px rgba(40, 34, 28, .07);
-      --radius: 18px;
-      --radius-sm: 12px;
-      --serif: Georgia, 'Times New Roman', Times, serif;
-      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      --green: #4f7f2f;
-      --orange: #d9822b;
-      --blue: #4d82c6;
-      --purple: #8a6ccf;
-      --danger: #9a3b2f;
-      --sidebar: 252px;
-      --right: 260px;
-      --top-pad: 70px;
-    }
-
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body {
-      margin: 0;
-      color: var(--ink);
-      background:
-        radial-gradient(circle at 25% -10%, #fff 0 34%, transparent 35%),
-        radial-gradient(circle at 85% 0%, rgba(230,224,216,.72), transparent 32%),
-        linear-gradient(135deg, #fbfaf8 0%, #f5f1eb 100%);
-      font-family: var(--sans);
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-
-    body::before {
-      content: "";
-      position: fixed;
-      inset: auto auto 24px -56px;
-      width: 300px;
-      height: 300px;
-      opacity: .34;
-      pointer-events: none;
-      background: repeating-radial-gradient(ellipse at center, transparent 0 13px, rgba(58,48,39,.10) 14px 15px, transparent 16px 29px);
-      border-radius: 999px;
-      filter: blur(.2px);
-      z-index: 0;
-    }
-
-    button, input, select, textarea { font: inherit; }
-    button { cursor: pointer; }
-    a { color: inherit; text-decoration: none; }
-
-    .app-shell {
-      position: relative;
-      z-index: 1;
-      display: grid;
-      grid-template-columns: var(--sidebar) minmax(0, 1fr) var(--right);
-      gap: 42px;
-      min-height: 100vh;
-      padding-right: 34px;
-    }
-
-    .sidebar {
-      position: sticky;
-      top: 0;
-      height: 100vh;
-      padding: 48px 48px 32px;
-      border-right: 1px solid var(--line);
-      background: linear-gradient(90deg, rgba(255,255,255,.72), rgba(255,255,255,.38));
-      backdrop-filter: blur(16px);
-      display: flex;
-      flex-direction: column;
-    }
-
-    .brand {
-      display: flex;
-      align-items: flex-start;
-      gap: 4px;
-      font-family: var(--serif);
-      font-size: 32px;
-      letter-spacing: -.055em;
-      line-height: .95;
-      margin-bottom: 42px;
-    }
-    .brand span { color: #b98a44; font-size: 18px; line-height: 1; padding-top: 2px; }
-    .rule { height: 1px; background: var(--line); width: 100%; margin: 0 0 26px; }
-    .nav-list { display: grid; gap: 4px; margin: 0 0 28px; }
-    .nav-link {
-      border: 0;
-      background: transparent;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 11px 0;
-      color: #36312c;
-      font-size: 14px;
-      text-align: left;
-    }
-    .nav-link.active::before {
-      content: "";
-      width: 7px; height: 7px;
-      background: var(--ink);
-      border-radius: 50%;
-    }
-    .nav-link:not(.active) { padding-left: 19px; color: #5d5650; }
-    .count-card {
-      display: inline-flex;
-      align-items: center;
-      gap: 14px;
-      margin-top: 22px;
-      color: var(--muted);
-      font-size: 13px;
-    }
-    .count-card strong {
-      min-width: 42px;
-      height: 42px;
-      display: inline-grid;
-      place-items: center;
-      border-radius: 999px;
-      background: rgba(255,255,255,.78);
-      border: 1px solid var(--line);
-      color: var(--ink);
-      box-shadow: 0 6px 20px rgba(30, 26, 21, .06);
-    }
-    .sidebar-footer { margin-top: auto; color: var(--muted); font-size: 12px; line-height: 1.8; }
-    .socials { display: flex; gap: 19px; margin-top: 26px; color: var(--ink); font-weight: 700; font-size: 14px; }
-
-    main { padding: var(--top-pad) 0 72px; min-width: 0; }
-    .hero {
-      max-width: 900px;
-      margin-bottom: 38px;
-    }
-    h1 {
-      font-family: var(--serif);
-      font-size: clamp(42px, 5.1vw, 72px);
-      line-height: .98;
-      letter-spacing: -.07em;
-      font-weight: 500;
-      max-width: 760px;
-      margin: 0 0 32px;
-    }
-    .dek {
-      color: var(--muted);
-      font-size: 17px;
-      line-height: 1.75;
-      max-width: 590px;
-      margin: 0;
-    }
-
-    .toolbar {
-      display: flex;
-      gap: 22px;
-      align-items: center;
-      margin: 36px 0 34px;
-      flex-wrap: wrap;
-    }
-    .search-wrap {
-      position: relative;
-      flex: 1 1 360px;
-      max-width: 460px;
-    }
-    .search-wrap svg {
-      position: absolute;
-      top: 50%; left: 16px;
-      transform: translateY(-50%);
-      width: 18px; height: 18px;
-      color: var(--muted);
-    }
-    .search-wrap input {
-      width: 100%;
-      height: 48px;
-      border-radius: 12px;
-      border: 1px solid var(--line-strong);
-      background: rgba(255,255,255,.78);
-      padding: 0 58px 0 48px;
-      outline: none;
-      box-shadow: 0 6px 20px rgba(40,34,28,.035);
-    }
-    .kbd {
-      position: absolute;
-      right: 12px; top: 50%;
-      transform: translateY(-50%);
-      color: var(--faint);
-      border: 1px solid var(--line);
-      border-radius: 7px;
-      padding: 2px 7px;
-      font-size: 12px;
-      background: rgba(255,255,255,.7);
-    }
-    .filters { display: flex; gap: 10px; flex-wrap: wrap; }
-    .chip {
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,.58);
-      border-radius: 999px;
-      min-height: 38px;
-      padding: 0 24px;
-      color: #5f5850;
-      box-shadow: 0 4px 12px rgba(40,34,28,.025);
-    }
-    .chip.active { background: #2d2a27; color: white; border-color: #2d2a27; }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 28px;
-      align-items: start;
-    }
-    .card {
-      position: relative;
-      border: 1px solid var(--line);
-      background: var(--paper);
-      border-radius: 14px;
-      overflow: hidden;
-      box-shadow: var(--shadow-soft);
-      min-width: 0;
-      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
-    }
-    .card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: rgba(28,24,20,.18); }
-    .card.dragging { opacity: .54; transform: scale(.98); }
-    .card.drop-hint { outline: 2px dashed rgba(30,26,22,.24); outline-offset: 5px; }
-    .browser-bar {
-      height: 22px;
-      display: flex;
-      gap: 5px;
-      align-items: center;
-      padding-left: 12px;
-      background: #f4eee7;
-      border-bottom: 1px solid rgba(28,24,20,.08);
-    }
-    .dot { width: 6px; height: 6px; border-radius: 50%; opacity: .78; }
-    .dot:nth-child(1) { background: #d98b6c; }
-    .dot:nth-child(2) { background: #d8bb74; }
-    .dot:nth-child(3) { background: #79a56e; }
-    .preview {
-      height: 178px;
-      background: linear-gradient(135deg, #f5f1eb, #ffffff);
-      border-bottom: 1px solid var(--line);
-      position: relative;
-      overflow: hidden;
-    }
-    .preview.matcha { background: radial-gradient(circle at 77% 43%, rgba(234,239,218,.9) 0 22%, transparent 23%), linear-gradient(120deg, #263a22, #556b3d); color: white; }
-    .preview.flash { background: radial-gradient(circle at 72% 48%, #fff 0 20%, transparent 21%), linear-gradient(135deg, #fbf4e8, #fffaf2); }
-    .preview.workout { background: linear-gradient(135deg, #e9e4dd, #fbfaf8); }
-    .preview.smoothie { background: radial-gradient(circle at 75% 58%, #f49d8b 0 10%, transparent 11%), linear-gradient(135deg, #fff5e7, #f7e4cd); }
-    .preview.dark { background: linear-gradient(135deg, #0c1114, #1f2b33); color: white; }
-    .preview.portfolio { background: radial-gradient(circle at 78% 40%, #e8ded3 0 18%, transparent 19%), linear-gradient(135deg, #fff, #f1ebe4); }
-    .preview.collection { background: linear-gradient(135deg, #fffdf8, #eee7dd); }
-    .preview.checklist { background: linear-gradient(135deg, #f9f5ec, #fff); }
-    .preview.travel { background: linear-gradient(135deg, #476b75, #d5d4c9); color: white; }
-    .preview-inner { position: absolute; inset: 26px 28px; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
-    .mini-brand { font-size: 8px; font-weight: 700; letter-spacing: .02em; margin-bottom: 22px; opacity: .7; }
-    .preview h3 {
-      font-family: var(--serif);
-      font-size: 25px;
-      line-height: .96;
-      letter-spacing: -.055em;
-      margin: 0;
-      max-width: 220px;
-      font-weight: 600;
-    }
-    .preview p { margin: 10px 0 0; font-size: 9px; opacity: .68; max-width: 190px; line-height: 1.4; }
-    .preview .pill-mini { margin-top: 16px; border-radius: 999px; background: rgba(255,255,255,.74); color: #171513; padding: 7px 12px; font-size: 8px; font-weight: 700; }
-    .preview.matcha .pill-mini, .preview.dark .pill-mini, .preview.travel .pill-mini { background: rgba(255,255,255,.18); color: white; border: 1px solid rgba(255,255,255,.22); }
-    .card-body { padding: 16px 18px 18px; min-height: 112px; }
-    .meta {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      color: #736b64;
-      font-size: 12px;
-      margin-bottom: 9px;
-    }
-    .meta::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
-    .meta.web::before { background: var(--orange); }
-    .meta.personal::before { background: var(--purple); }
-    .meta.ui::before { background: var(--blue); }
-    .card-title-row { display: flex; gap: 8px; align-items: center; }
-    .card-title {
-      border: 0;
-      background: transparent;
-      text-align: left;
-      padding: 0;
-      flex: 1;
-      font-family: var(--serif);
-      font-size: 19px;
-      line-height: 1.1;
-      letter-spacing: -.035em;
-      color: var(--ink);
-    }
-    .card-desc { margin: 8px 0 0; color: #69625c; font-size: 13px; line-height: 1.45; }
-    .icon-btn, .open-btn {
-      border: none;
-      background: rgba(255,255,255,.8);
-      border-radius: 10px;
-      min-width: 38px;
-      height: 38px;
-      display: inline-grid;
-      place-items: center;
-      color: #4f4944;
-    }
-    .open-btn { padding: 0 18px; font-weight: 700; min-width: 78px; }
-    .more {
-      position: absolute;
-      right: 13px;
-      top: 32px;
-      border: 0;
-      background: transparent;
-      color: grey;
-      font-size: 22px;
-      line-height: 1;
-    }
-    body:not(.dev-mode) .more { display: none; }
-    body:not(.dev-mode) .card { cursor: default; }
-    .tag-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 10px;
-    }
-    .tag-pill {
-      display: inline-flex;
-      align-items: center;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      background: rgba(255,255,255,.62);
-      color: #625a53;
-      font-size: 11px;
-      line-height: 1;
-      padding: 5px 8px;
-    }
-    .status-dot {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      z-index: 3;
-      width: 9px;
-      height: 9px;
-      border-radius: 999px;
-      background: var(--green);
-      box-shadow: 0 0 0 3px rgba(255,255,255,.78);
-    }
-    .status-dot[data-status="under_construction"] { background: #d8bb74; }
-    .status-dot[data-status="broken"] { background: #c8745f; }
-    .preview.has-image {
-      background: var(--image-url) center / cover no-repeat;
-    }
-    .preview.has-image .preview-inner {
-      background: linear-gradient(180deg, rgba(255,255,255,.62), rgba(255,255,255,.88));
-      backdrop-filter: blur(2px);
-    }
-    .category-manager {
-      display: grid;
-      gap: 12px;
-      margin-top: 14px;
-    }
-    .category-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      padding: 10px;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      background: rgba(250,248,245,.72);
-    }
-    .category-token {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 7px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,.8);
-      color: #514b45;
-      font-size: 12px;
-    }
-    .category-token button {
-      border: 0;
-      background: transparent;
-      color: var(--danger);
-      font-weight: 800;
-      padding: 0;
-    }
-
-
-    .right-rail {
-      padding-top: 48px;
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
-      gap: 28px;
-    }
-    .mode-toggle {
-      align-self: end;
-      width: 216px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      padding: 7px;
-      border-radius: 32px;
-      background: rgba(38, 32, 26, .09);
-      gap: 5px;
-      margin-bottom: 20px;
-    }
-    .mode-toggle button {
-      border: 0;
-      border-radius: 20px;
-      height: 42px;
-      background: transparent;
-      color: #756f68;
-      font-weight: 300;
-    }
-    .mode-toggle button.active { background: rgba(255,255,255,.92); color: var(--muted); box-shadow: 0 6px 18px rgba(30,26,22,.11); }
-    .status-chip {
-      align-self: end;
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      padding: 14px 18px;
-      border-radius: 18px;
-      background: rgba(255,255,255,.75);
-      border: 1px solid var(--line);
-      box-shadow: var(--shadow-soft);
-      color: #514b45;
-      font-size: 13px;
-      margin-bottom: 76px;
-    }
-    .status-chip::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
-    .rail-card {
-      background: rgba(255,255,255,.75);
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      box-shadow: var(--shadow-soft);
-      padding: 18px;
-    }
-    .rail-title {
-      display: flex; justify-content: space-between; align-items: center;
-      font-weight: 800; font-size: 14px; margin-bottom: 12px;
-    }
-    .tool-list { display: grid; gap: 4px; }
-    .tool-button {
-      border: 0;
-      background: transparent;
-      min-height: 36px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      text-align: left;
-      border-radius: 10px;
-      color: #3f3934;
-      padding: 0 2px;
-    }
-    .tool-button svg { width: 16px; height: 16px; color: #514b45; }
-    .tool-button:hover { background: rgba(30,26,22,.045); padding-left: 8px; }
-    .tool-button.locked { color: var(--faint); pointer-events: none; }
-    .tool-button.locked svg { opacity: .36; }
-    .add-panel { display: grid; gap: 12px; margin-top: 14px; border-top: 1px solid var(--line); padding-top: 14px; }
-    .field { display: grid; gap: 6px; }
-    .field label { color: var(--muted); font-size: 12px; }
-    .field input, .field select, .field textarea {
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      background: rgba(255,255,255,.78);
-      min-height: 40px;
-      padding: 10px 12px;
-      outline: none;
-      width: 100%;
-    }
-    .field textarea { min-height: 78px; resize: vertical; }
-    .primary-btn, .ghost-btn, .danger-btn {
-      border-radius: 999px;
-      min-height: 40px;
-      padding: 0 18px;
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,.8);
-      font-weight: 600;
-    }
-    .primary-btn { background: #756f68; color: white; border-color: #756f68; padding: 12px;}
-    .danger-btn { color: var(--danger); }
-    .banner {
-      display: none;
-      align-items: center;
-      gap: 12px;
-      padding: 13px 15px;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      background: rgba(255,255,255,.76);
-      color: #5c554f;
-      margin-bottom: 20px;
-      box-shadow: 0 8px 24px rgba(30,26,22,.045);
-    }
-    .banner.visible { display: flex; }
-    .banner::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex: 0 0 auto; }
-    .empty-state {
-      display: none;
-      border: 1px dashed var(--line-strong);
-      border-radius: var(--radius);
-      padding: 42px;
-      background: rgba(255,255,255,.52);
-      color: var(--muted);
-      text-align: center;
-    }
-    .empty-state.visible { display: block; }
-
-    [data-dev-only] { display: none !important; }
-    body.dev-mode [data-dev-only] { display: revert !important; }
-    body.dev-mode .add-panel { display: grid !important; }
-    body.dev-mode .locked { pointer-events: auto; color: #3f3934; }
-    body.dev-mode .locked svg { opacity: 1; }
-
-    .viewer-shell { display: none; min-height: 100vh; padding: 18px 18px 0; }
-    body.viewer-open .app-shell { display: none; }
-    body.viewer-open .viewer-shell { display: grid; grid-template-rows: auto 1fr; gap: 16px; }
-    .viewer-topbar {
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      background: rgba(255,255,255,.78);
-      box-shadow: var(--shadow-soft);
-      padding: 14px 16px;
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      align-items: center;
-      gap: 16px;
-    }
-    .viewer-title { font-family: var(--serif); font-size: 20px; letter-spacing: -.04em; margin: 0; }
-    .viewer-address { margin: 3px 0 0; color: var(--muted); font-size: 13px; word-break: break-all; }
-    .viewer-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: end; }
-    .version-select { min-height: 40px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.82); padding: 0 14px; color: #4f4944; max-width: 260px; }
-    .version-note { color: var(--muted); font-size: 12px; }
-    .viewer-frame-wrap {
-      border-top: 1px solid var(--line);
-      border-left: 1px solid var(--line);
-      border-right: 1px solid var(--line);
-      border-bottom: 0;
-      border-radius: 18px 18px 0 0;
-      overflow: hidden;
-      background: white;
-      box-shadow: var(--shadow);
-    }
-    #viewerFrame { width: 100%; height: calc(100vh - 118px); border: 0; background: white; }
-
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      z-index: 30;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 18px;
-      background: rgba(28, 24, 20, .28);
-      backdrop-filter: blur(10px);
-    }
-    .modal-backdrop.visible { display: flex; }
-    .modal {
-      width: min(720px, 100%);
-      max-height: 90vh;
-      overflow: auto;
-      background: rgba(255,255,255,.94);
-      border: 1px solid var(--line);
-      border-radius: 20px;
-      box-shadow: 0 30px 90px rgba(28,24,20,.22);
-      padding: 24px;
-    }
-    .modal h2 { font-family: var(--serif); font-size: 32px; letter-spacing: -.055em; margin: 0 0 8px; }
-    .modal p { color: var(--muted); line-height: 1.6; margin: 0 0 18px; }
-    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; margin-top: 20px; }
-    .review-list { display: grid; gap: 12px; margin-top: 16px; }
-    .review-item {
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 14px;
-      background: rgba(250,248,245,.8);
-      display: grid;
-      gap: 10px;
-    }
-    .review-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-
-    .visually-hidden { position: absolute !important; clip: rect(1px,1px,1px,1px); width: 1px; height: 1px; overflow: hidden; white-space: nowrap; }
-
-    @media (max-width: 1280px) {
-      :root { --sidebar: 220px; --right: 230px; }
-      .app-shell { gap: 28px; padding-right: 24px; }
-      .sidebar { padding: 42px 34px 30px; }
-      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .status-chip { margin-bottom: 52px; }
-    }
-
-    @media (max-width: 980px) {
-      .app-shell { grid-template-columns: 1fr; padding: 18px; gap: 0; }
-      .sidebar {
-        position: relative;
-        height: auto;
-        border: 1px solid var(--line);
-        border-radius: 22px;
-        padding: 20px;
-        margin-bottom: 22px;
-      }
-      .brand { margin-bottom: 18px; }
-      .rule, .sidebar-footer { display: none; }
-      .nav-list { display: flex; flex-wrap: wrap; margin: 0; }
-      .nav-link, .nav-link:not(.active) { padding: 10px 12px; border-radius: 999px; background: rgba(255,255,255,.55); }
-      .count-card { margin-top: 14px; }
-      main { padding: 20px 0 0; }
-      .right-rail { order: -1; padding-top: 0; margin-bottom: 18px; gap: 12px; }
-      .mode-toggle, .status-chip { align-self: stretch; width: 100%; margin: 0; }
-      .rail-card { display: none; }
-      body.dev-mode .rail-card { display: block; }
-      .grid { gap: 18px; }
-    }
-
-    @media (max-width: 680px) {
-      .app-shell { padding: 12px; }
-      h1 { font-size: 42px; }
-      .dek { font-size: 15px; }
-      .toolbar { gap: 14px; margin: 26px 0 22px; }
-      .search-wrap { flex-basis: 100%; max-width: none; }
-      .filters { width: 100%; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
-      .chip { white-space: nowrap; padding: 0 18px; }
-      .grid { grid-template-columns: 1fr; }
-      .preview { height: 156px; }
-      .viewer-shell { padding: 10px 10px 0; }
-      .viewer-topbar { grid-template-columns: 1fr; }
-      .viewer-actions { justify-content: stretch; }
-      .viewer-actions .primary-btn, .viewer-actions .ghost-btn { flex: 1; }
-      #viewerFrame { height: calc(100vh - 176px); }
-      .review-grid { grid-template-columns: 1fr; }
-      .modal { padding: 18px; }
-    }
-  </style>
-</head>
-<body>
-  <div id="navigatorApp" class="app-shell">
-    <aside class="sidebar" aria-label="Site navigation">
-      <a class="brand" href="#top" aria-label="Jenn Lee home">Jenn Lee<span>✦</span></a>
-      <div class="rule"></div>
-      <nav class="nav-list">
-        <button class="nav-link active" data-jump="top">Home</button>
-        <button class="nav-link" data-jump="portfolio">Portfolio</button>
-        <a class="nav-link" href="https://www.linkedin.com/in/jennifer-lee-95154328/" target="_blank" rel="noopener">Resume</a>
-      </nav>
-      <div class="rule"></div>
-      <div class="count-card"><strong id="routeCount">0</strong><span>projects</span></div>
-      <div class="sidebar-footer">
-        <div>© 2026 Jenn Lee</div>
-        <div>All rights reserved.</div>
-        <div class="socials" aria-label="Social links">
-          <span>♥</span>
-          <a href="https://github.com/qlz/" target="_blank" rel="noopener" aria-label="GitHub">GH</a>
-          <a href="https://www.linkedin.com/in/jennifer-lee-95154328/" target="_blank" rel="noopener" aria-label="LinkedIn">in</a>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Jenn Lee — Portfolio Navigator</title>
+    <meta
+      name="description"
+      content="My curated portfolio of projects and live websites. Many of these are still in development"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./config.js"></script>
+  </head>
+  <body>
+    <div id="navigatorApp" class="app-shell">
+      <aside class="sidebar" aria-label="Site navigation">
+        <a class="brand" href="#top" aria-label="Jenn Lee home"
+          >Jenn Lee<span>✦</span></a
+        >
+        <div class="rule"></div>
+        <nav class="nav-list">
+          <button class="nav-link active" data-jump="top">Home</button>
+          <button class="nav-link" data-jump="portfolio">Portfolio</button>
+          <a
+            class="nav-link"
+            href="https://www.linkedin.com/in/jennifer-lee-95154328/"
+            target="_blank"
+            rel="noopener"
+            >Resume</a
+          >
+        </nav>
+        <div class="rule"></div>
+        <div class="count-card">
+          <strong id="routeCount">0</strong><span>projects</span>
         </div>
-      </div>
-    </aside>
-
-    <main id="top">
-      <section class="hero" id="intro">
-        <h1>A little bit of design,</br>a dash of vibe coding,</br>and way too much matcha.</h1>
-        <p class="dek">My curated portfolio of projects and live websites. Many of these are still in development</p>
-      </section>
-
-      <div id="statusBanner" class="banner" role="status"></div>
-
-      <section id="portfolio" aria-label="Portfolio library">
-        <div class="toolbar">
-          <label class="search-wrap" for="searchInput">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
-            <input id="searchInput" type="search" placeholder="Search projects..." autocomplete="off" />
-            <span class="kbd">⌘ K</span>
-          </label>
-          <div id="filters" class="filters" aria-label="Project filters"></div>
-        </div>
-
-        <div id="emptyState" class="empty-state">
-          <h2>No projects found</h2>
-          <p>Try a different search or add a destination in development mode.</p>
-        </div>
-        <div id="siteGrid" class="grid" aria-live="polite"></div>
-      </section>
-    </main>
-
-    <aside class="right-rail" aria-label="Navigator controls">
-      <div class="mode-toggle" aria-label="Mode switcher">
-        <button id="showcaseModeBtn" class="active" type="button">Showcase</button>
-        <button id="devModeBtn" type="button">Dev</button>
-      </div>
-      <div id="modeStatus" class="status-chip">Mode: Showcase</div>
-
-      <section data-dev-only class="rail-card">
-        <div class="rail-title"><span>Navigator Tools</span><span>⌃</span></div>
-        <div class="tool-list">
-          <button class="tool-button" data-action="backTop" type="button">⌾ <span>Back to top</span></button>
-          <button class="tool-button" data-dev-only data-action="upload" type="button">⇧ <span>Upload HTML</span></button>
-          <button class="tool-button" data-dev-only data-action="focusAdd" type="button">↗ <span>Add Link</span></button>
-          <button class="tool-button" data-dev-only data-action="editSelected" type="button">✎ <span>Edit selected</span></button>
-          
-          <button class="tool-button" data-dev-only data-action="review" type="button">□ <span>Organize</span></button>
-          <button class="tool-button" data-action="focusSearch" type="button">⌕ <span>Search</span></button>
-        </div>
-      </section>
-
-      <section data-dev-only class="rail-card">
-        <div class="rail-title"><span>Dev Tools</span><span>▧</span></div>
-        <div class="tool-list">
-          <button class="tool-button locked" data-dev-only data-action="clearState" type="button">☒ <span>Clear state</span></button>
-          <button class="tool-button locked" data-dev-only data-action="sync" type="button">↻ <span>Sync Supabase</span></button>
-          <button class="tool-button locked" data-dev-only data-action="review" type="button">◇ <span>Organize uploads</span></button>
-          
-        </div>
-
-        <form id="addForm" class="add-panel" data-dev-only>
-          <div class="field">
-            <label for="newTitle">Display name</label>
-            <input id="newTitle" required placeholder="Matcha Tracker" />
+        <div class="sidebar-footer">
+          <div>© 2026 Jenn Lee</div>
+          <div>All rights reserved.</div>
+          <div class="socials" aria-label="Social links">
+            <span>♥</span>
+            <a
+              href="https://github.com/qlz/"
+              target="_blank"
+              rel="noopener"
+              aria-label="GitHub"
+              >GH</a
+            >
+            <a
+              href="https://www.linkedin.com/in/jennifer-lee-95154328/"
+              target="_blank"
+              rel="noopener"
+              aria-label="LinkedIn"
+              >in</a
+            >
           </div>
-          <div class="field">
-            <label for="newUrl">URL</label>
-            <input id="newUrl" required type="url" placeholder="https://example.com" />
-          </div>
-          <div class="field">
-            <label for="newCategory">Tags</label>
-            <input id="newCategory" list="categoryOptions" placeholder="Matcha, Tools" />
-            <datalist id="categoryOptions">
-              <option value="Matcha"></option>
-              <option value="AI Learning"></option>
-              <option value="Web Design"></option>
-              <option value="Tools"></option>
-            </datalist>
-          </div>
-          <div class="field">
-            <label for="newDescription">Description</label>
-            <textarea id="newDescription" placeholder="Short description for this project"></textarea>
-          </div>
-          <div class="field">
-            <label for="newStatus">Status</label>
-            <select id="newStatus">
-              <option value="working">Working</option>
-              <option value="under_construction">Under construction</option>
-              <option value="broken">Broken</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="newImageUrl">Preview image URL</label>
-            <input id="newImageUrl" type="url" placeholder="https://example.com/preview.png" />
-          </div>
-          <div class="field">
-            <label for="newImageFile">Preview image upload</label>
-            <input id="newImageFile" type="file" accept="image/*" />
-          </div>
-          <div class="field">
-            <label for="newTopic">Topic</label>
-            <input id="newTopic" placeholder="Tooling" />
-          </div>
-          <div class="field">
-            <label for="newSubtopic">Subtopic</label>
-            <input id="newSubtopic" placeholder="Food" />
-          </div>
-          <button class="primary-btn" type="submit">Save Link</button>
-          <label class="ghost-btn" style="display:grid;place-items:center;">
-            Upload HTML
-            <input id="panelUploadInput" class="visually-hidden" type="file" accept=".html,text/html" multiple />
-          </label>
-        </form>
-      </section>
-    </aside>
-  </div>
+        </div>
+      </aside>
 
-  <section class="viewer-shell" aria-label="Viewer mode">
-    <header class="viewer-topbar">
-      <button id="backToNavigator" class="ghost-btn" type="button">← Back</button>
-      <div>
-        <h2 id="viewerTitle" class="viewer-title">Viewer</h2>
-        <p id="viewerAddress" class="viewer-address"></p>
-      </div>
-      <div class="viewer-actions">
-        <a id="openOriginal" class="primary-btn" href="#" target="_blank" rel="noopener">Open Original</a>
-      </div>
-    </header>
-    <div class="viewer-frame-wrap"><iframe id="viewerFrame" title="Embedded page viewer" sandbox="allow-same-origin allow-scripts allow-forms allow-popups"></iframe></div>
-  </section>
+      <main id="top">
+        <section class="hero" id="intro">
+          <h1>
+            A little bit of design,<br />a dash of vibe coding,<br />and way too
+            much matcha.
+          </h1>
+          <p class="dek">
+            My curated portfolio of projects and live websites. Many of these
+            are still in development
+          </p>
+        </section>
 
-  <input id="topbarUploadInput" class="visually-hidden" type="file" accept=".html,text/html" multiple />
+        <div id="statusBanner" class="banner" role="status"></div>
 
-  <div id="editModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="editTitle">
-    <div class="modal">
-      <h2 id="editTitle">Edit project</h2>
-      <p>Update the project card. For uploaded HTML files, changing the display name does not rename or modify the original upload.</p>
-      <form id="editForm">
-        <div class="review-grid">
-          <label class="field"><span>Display name</span><input id="editName" required /></label>
-          <label class="field"><span>URL</span><input id="editUrl" type="url" /></label>
-          <label class="field"><span>Status</span><select id="editStatus"><option value="working">Working</option><option value="under_construction">Under construction</option><option value="broken">Broken</option></select></label>
+        <section id="portfolio" aria-label="Portfolio library">
+          <div class="toolbar">
+            <label class="search-wrap" for="searchInput">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                aria-hidden="true"
+              >
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m20 20-3.5-3.5"></path>
+              </svg>
+              <input
+                id="searchInput"
+                type="search"
+                placeholder="Search projects..."
+                autocomplete="off"
+              />
+              <span class="kbd">⌘ K</span>
+            </label>
+            <div
+              id="filters"
+              class="filters"
+              aria-label="Project filters"
+            ></div>
+          </div>
+
+          <div id="emptyState" class="empty-state">
+            <h2>No projects found</h2>
+            <p>
+              Try a different search or add a destination in development mode.
+            </p>
+          </div>
+          <div id="siteGrid" class="grid" aria-live="polite"></div>
+        </section>
+      </main>
+
+      <aside class="right-rail" aria-label="Navigator controls">
+        <div class="mode-toggle" aria-label="Mode switcher">
+          <button id="showcaseModeBtn" class="active" type="button">
+            Showcase
+          </button>
+          <button id="devModeBtn" type="button">Dev</button>
         </div>
-        <div class="field" style="margin-top:12px;">
-          <label for="editDescription">Description</label>
-          <textarea id="editDescription"></textarea>
-        </div>
-        <div class="review-grid" style="margin-top:12px;">
-          <label class="field"><span>Tags</span><input id="editCategories" list="categoryOptions" placeholder="Matcha, Tools" /></label>
-          <label class="field"><span>Topic</span><input id="editTopic" /></label>
-          <label class="field"><span>Subtopic</span><input id="editSubtopic" /></label>
-        </div>
-        <div class="review-grid" style="margin-top:12px;">
-          <label class="field"><span>Preview image URL</span><input id="editImageUrl" type="url" placeholder="https://example.com/preview.png" /></label>
-          <label class="field"><span>Upload preview image</span><input id="editImageFile" type="file" accept="image/*" /></label>
-          <label class="field"><span>Type</span><input id="editType" placeholder="Live Links" /></label>
-        </div>
-        <div class="modal-actions">
-          <button id="deleteEntryBtn" class="danger-btn" type="button">Delete Entry</button>
-          <button class="ghost-btn" type="button" data-close-modal="editModal">Cancel</button>
-          <button class="primary-btn" type="submit">Save Changes</button>
-        </div>
-      </form>
+        <div id="modeStatus" class="status-chip">Mode: Showcase</div>
+
+        <section data-dev-only class="rail-card">
+          <div class="rail-title">
+            <span>Navigator Tools</span><span>⌃</span>
+          </div>
+          <div class="tool-list">
+            <button class="tool-button" data-action="backTop" type="button">
+              ⌾ <span>Back to top</span>
+            </button>
+            <button
+              class="tool-button"
+              data-dev-only
+              data-action="upload"
+              type="button"
+            >
+              ⇧ <span>Upload HTML</span>
+            </button>
+            <button
+              class="tool-button"
+              data-dev-only
+              data-action="focusAdd"
+              type="button"
+            >
+              ↗ <span>Add Link</span>
+            </button>
+            <button
+              class="tool-button"
+              data-dev-only
+              data-action="editSelected"
+              type="button"
+            >
+              ✎ <span>Edit selected</span>
+            </button>
+
+            <button
+              class="tool-button"
+              data-dev-only
+              data-action="review"
+              type="button"
+            >
+              □ <span>Organize</span>
+            </button>
+            <button class="tool-button" data-action="focusSearch" type="button">
+              ⌕ <span>Search</span>
+            </button>
+          </div>
+        </section>
+
+        <section data-dev-only class="rail-card">
+          <div class="rail-title"><span>Dev Tools</span><span>▧</span></div>
+          <div class="tool-list">
+            <button
+              class="tool-button locked"
+              data-dev-only
+              data-action="clearState"
+              type="button"
+            >
+              ☒ <span>Clear state</span>
+            </button>
+            <button
+              class="tool-button locked"
+              data-dev-only
+              data-action="sync"
+              type="button"
+            >
+              ↻ <span>Sync Supabase</span>
+            </button>
+            <button
+              class="tool-button locked"
+              data-dev-only
+              data-action="review"
+              type="button"
+            >
+              ◇ <span>Organize uploads</span>
+            </button>
+          </div>
+
+          <form id="addForm" class="add-panel" data-dev-only>
+            <div class="field">
+              <label for="newTitle">Display name</label>
+              <input id="newTitle" required placeholder="Matcha Tracker" />
+            </div>
+            <div class="field">
+              <label for="newUrl">URL</label>
+              <input
+                id="newUrl"
+                required
+                type="url"
+                placeholder="https://example.com"
+              />
+            </div>
+            <div class="field">
+              <label for="newCategory">Tags</label>
+              <input
+                id="newCategory"
+                list="categoryOptions"
+                placeholder="Matcha, Tools"
+              />
+              <datalist id="categoryOptions">
+                <option value="Matcha"></option>
+                <option value="AI Learning"></option>
+                <option value="Web Design"></option>
+                <option value="Tools"></option>
+              </datalist>
+            </div>
+            <div class="field">
+              <label for="newDescription">Description</label>
+              <textarea
+                id="newDescription"
+                placeholder="Short description for this project"
+              ></textarea>
+            </div>
+            <div class="field">
+              <label for="newStatus">Status</label>
+              <select id="newStatus">
+                <option value="working">Working</option>
+                <option value="under_construction">Under construction</option>
+                <option value="broken">Broken</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="newImageUrl">Preview image URL</label>
+              <input
+                id="newImageUrl"
+                type="url"
+                placeholder="https://example.com/preview.png"
+              />
+            </div>
+            <div class="field">
+              <label for="newImageFile">Preview image upload</label>
+              <input id="newImageFile" type="file" accept="image/*" />
+            </div>
+            <div class="field">
+              <label for="newTopic">Topic</label>
+              <input id="newTopic" placeholder="Tooling" />
+            </div>
+            <div class="field">
+              <label for="newSubtopic">Subtopic</label>
+              <input id="newSubtopic" placeholder="Food" />
+            </div>
+            <button class="primary-btn" type="submit">Save Link</button>
+            <label class="ghost-btn" style="display: grid; place-items: center">
+              Upload HTML
+              <input
+                id="panelUploadInput"
+                class="visually-hidden"
+                type="file"
+                accept=".html,text/html"
+                multiple
+              />
+            </label>
+          </form>
+        </section>
+      </aside>
     </div>
-  </div>
 
-  <div id="categoryModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="categoryTitle">
-    <div class="modal">
-      <h2 id="categoryTitle">Topic index</h2>
-      <p>Topics are derived from saved projects.</p>
-      <form id="categoryForm" class="category-manager">
-        <div class="field">
-          <label for="categoryNameInput">Topic</label>
-          <input id="categoryNameInput" placeholder="AI Learning" disabled />
+    <section class="viewer-shell" aria-label="Viewer mode">
+      <header class="viewer-topbar" id="viewerTopbar">
+        <button id="backToNavigator" class="ghost-btn" type="button">
+          ← Back
+        </button>
+        <div>
+          <h2 id="viewerTitle" class="viewer-title">Viewer</h2>
+          <p id="viewerAddress" class="viewer-address"></p>
         </div>
-        <button class="primary-btn" type="submit" disabled>Topics are automatic</button>
-      </form>
-      <div id="categoryList" class="category-list" aria-live="polite"></div>
-      <div class="modal-actions">
-        <button class="ghost-btn" type="button" data-close-modal="categoryModal">Done</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="reviewModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="reviewTitle">
-    <div class="modal">
-      <h2 id="reviewTitle">Organize uploads</h2>
-      <p>Adjust topic and subtopic before saving.</p>
-      <div id="reviewList" class="review-list"></div>
-      <div class="modal-actions">
-        <button id="reviewLaterBtn" class="ghost-btn" type="button">Review Later</button>
-        <button id="acceptSuggestionsBtn" class="ghost-btn" type="button">Accept Suggestions</button>
-        <button id="savePlacementsBtn" class="primary-btn" type="button">Save Placements</button>
-      </div>
-    </div>
-  </div>
-
-  <template id="cardTemplate">
-    <article class="card" draggable="true">
-      <div class="browser-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
-      <div class="preview"><div class="preview-inner"><div class="mini-brand">Portfolio</div><h3></h3><p></p><span class="pill-mini">Open</span></div></div>
-      <span class="status-dot" title="Status"></span>
-      <button class="more" title="More actions" type="button">⋮</button>
-      <div class="card-body">
-        <div class="meta"></div>
-        <div class="card-title-row">
-          <button class="card-title" type="button"></button>
-          <button class="icon-btn" title="Open original" type="button">↗</button>
+        <div class="viewer-actions">
+          <button
+            id="copyEntryLink"
+            class="ghost-btn"
+            type="button"
+            title="Copy shareable link"
+          >
+            Copy link
+          </button>
+          <button
+            id="hideViewerChrome"
+            class="viewer-icon-btn"
+            type="button"
+            title="Hide top bar"
+            aria-label="Hide top bar"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+              <path
+                d="M6.4 6.4l11.2 11.2M17.6 6.4L6.4 17.6"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+          <a
+            id="openOriginal"
+            class="primary-btn"
+            href="#"
+            target="_blank"
+            rel="noopener"
+            >Open Original</a
+          >
         </div>
-        <p class="card-desc"></p>
-        <div class="tag-row"></div>
+      </header>
+      <div class="viewer-frame-wrap">
+        <iframe
+          id="viewerFrame"
+          title="Embedded page viewer"
+          sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
+        ></iframe>
       </div>
-    </article>
-  </template>
-
-  <script>
-    const ENV = window.ENV || {};
-    const SUPABASE_URL = ENV.SUPABASE_URL || '';
-    const SUPABASE_ANON_KEY = ENV.SUPABASE_ANON_KEY || '';
-    const ROUTES_TABLE = 'routes';
-    const TAXONOMY_TABLE = 'taxonomy';
-    const CATEGORIES_TABLE = 'categories';
-    const ROUTE_CATEGORIES_TABLE = 'route_categories';
-    const UPLOAD_BUCKET = 'uploads';
-    const DEV_PASSWORD = 'devv';
-
-    const supabaseReady = SUPABASE_URL.includes('supabase.co') && !SUPABASE_URL.includes('YOUR_PROJECT_ID') && !SUPABASE_ANON_KEY.includes('YOUR_');
-    const sb = supabaseReady ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-
-    const devKey = 'jenn:portfolio-dev-mode:v1';
-    const pendingKey = 'jenn:portfolio-pending-review:v3';
-    const preferredKey = 'jenn:portfolio-preferred-versions:v1';
-
-    const state = {
-      destinations: [],
-      groups: [],
-      filtered: [],
-      activeFilter: 'All',
-      search: '',
-      selectedId: null,
-      selectedGroupId: null,
-      pendingReview: [],
-      draggedGroupId: null,
-      tags: [],
-      preferred: {}
-    };
-
-    const el = {
-      body: document.body,
-      siteGrid: document.getElementById('siteGrid'),
-      routeCount: document.getElementById('routeCount'),
-      searchInput: document.getElementById('searchInput'),
-      filters: document.getElementById('filters'),
-      emptyState: document.getElementById('emptyState'),
-      banner: document.getElementById('statusBanner'),
-      showcaseModeBtn: document.getElementById('showcaseModeBtn'),
-      devModeBtn: document.getElementById('devModeBtn'),
-      modeStatus: document.getElementById('modeStatus'),
-      addForm: document.getElementById('addForm'),
-      newTitle: document.getElementById('newTitle'),
-      newUrl: document.getElementById('newUrl'),
-      newCategory: document.getElementById('newCategory'),
-      newDescription: document.getElementById('newDescription'),
-      newStatus: document.getElementById('newStatus'),
-      newImageUrl: document.getElementById('newImageUrl'),
-      newImageFile: document.getElementById('newImageFile'),
-      newTopic: document.getElementById('newTopic'),
-      newSubtopic: document.getElementById('newSubtopic'),
-      topbarUploadInput: document.getElementById('topbarUploadInput'),
-      panelUploadInput: document.getElementById('panelUploadInput'),
-      viewerTitle: document.getElementById('viewerTitle'),
-      viewerAddress: document.getElementById('viewerAddress'),
-      viewerFrame: document.getElementById('viewerFrame'),
-      openOriginal: document.getElementById('openOriginal'),
-      backToNavigator: document.getElementById('backToNavigator'),
-      editModal: document.getElementById('editModal'),
-      editForm: document.getElementById('editForm'),
-      editName: document.getElementById('editName'),
-      editUrl: document.getElementById('editUrl'),
-      editStatus: document.getElementById('editStatus'),
-      editDescription: document.getElementById('editDescription'),
-      editCategories: document.getElementById('editCategories'),
-      editTopic: document.getElementById('editTopic'),
-      editSubtopic: document.getElementById('editSubtopic'),
-      editImageUrl: document.getElementById('editImageUrl'),
-      editImageFile: document.getElementById('editImageFile'),
-      editType: document.getElementById('editType'),
-      deleteEntryBtn: document.getElementById('deleteEntryBtn'),
-      categoryModal: document.getElementById('categoryModal'),
-      categoryForm: document.getElementById('categoryForm'),
-      categoryNameInput: document.getElementById('categoryNameInput'),
-      categoryList: document.getElementById('categoryList'),
-      reviewModal: document.getElementById('reviewModal'),
-      reviewList: document.getElementById('reviewList'),
-      acceptSuggestionsBtn: document.getElementById('acceptSuggestionsBtn'),
-      savePlacementsBtn: document.getElementById('savePlacementsBtn'),
-      reviewLaterBtn: document.getElementById('reviewLaterBtn'),
-      cardTemplate: document.getElementById('cardTemplate')
-    };
-
-    init();
-
-    async function init() {
-      bindEvents();
-      setDevMode(localStorage.getItem(devKey) === 'true', { silent: true });
-      state.preferred = readJSON(preferredKey, {});
-      await loadDestinations();
-      await loadTags();
-      loadPendingReview();
-      rebuildGroups();
-      applyFilters();
-      if (!supabaseReady) showBanner('Supabase is not connected yet. Run locally with config.js, or configure GitHub Pages secrets.');
-    }
-
-    function bindEvents() {
-      el.searchInput.addEventListener('input', event => {
-        state.search = event.target.value.trim().toLowerCase();
-        applyFilters();
-      });
-
-      document.addEventListener('keydown', event => {
-        if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
-          event.preventDefault();
-          el.searchInput.focus();
-        }
-        if (event.key === 'Escape') closeAllModals();
-      });
-
-      document.querySelectorAll('[data-jump]').forEach(btn => btn.addEventListener('click', () => {
-        const target = document.getElementById(btn.dataset.jump);
-        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }));
-
-      document.querySelectorAll('[data-action]').forEach(btn => btn.addEventListener('click', () => handleAction(btn.dataset.action)));
-
-      el.showcaseModeBtn.addEventListener('click', () => setDevMode(false));
-      el.devModeBtn.addEventListener('click', () => {
-        if (document.body.classList.contains('dev-mode')) return;
-        const pw = prompt('Enter development password');
-        if (pw === DEV_PASSWORD) setDevMode(true);
-        else if (pw !== null) showBanner('Incorrect password.');
-      });
-
-      el.addForm.addEventListener('submit', async event => {
-        event.preventDefault();
-        if (!sb) {
-          showBanner('Supabase is not configured. Add your Supabase URL and anon key before saving.');
-          return;
-        }
-        const title = el.newTitle.value.trim();
-        const topic = el.newTopic.value.trim() || firstTopic() || 'Portfolio';
-        const subtopic = el.newSubtopic.value.trim() || 'General';
-        const tags = cleanTags([topic, subtopic, ...parseList(el.newCategory.value)]);
-        const imageFile = el.newImageFile.files && el.newImageFile.files[0];
-        let imageUrl = el.newImageUrl.value.trim();
-        let imagePath = '';
-        if (imageFile) {
-          const uploaded = await uploadPreviewImage(imageFile);
-          imageUrl = uploaded.image_url || imageUrl;
-          imagePath = uploaded.image_path || '';
-        }
-        const item = normalizeDestination({
-          id: uid(),
-          mode: 'url',
-          title,
-          description: el.newDescription.value || 'Saved website link.',
-          address: el.newUrl.value,
-          url: el.newUrl.value,
-          type: 'Live Links',
-          topic,
-          subtopic,
-          group_label: title,
-          group_id: slugify(title),
-          classification_status: 'preferred',
-          manual_classification: true,
-          website_status: el.newStatus.value || 'working',
-          image_url: imageUrl,
-          image_path: imagePath,
-          tags,
-          uploaded_at: new Date().toISOString(),
-          preview: imageUrl ? 'image' : previewFromText(title + ' ' + topic + ' ' + subtopic)
-        });
-        state.destinations.push(item);
-        state.preferred[item.group_id] = item.id;
-        await persistAll();
-        el.addForm.reset();
-        rebuildGroups();
-        applyFilters();
-        showBanner('Saved.');
-      });
-
-      el.topbarUploadInput.addEventListener('change', event => uploadHtmlFiles(event.target.files));
-      el.panelUploadInput.addEventListener('change', event => uploadHtmlFiles(event.target.files));
-      el.backToNavigator.addEventListener('click', closeViewer);
-      el.openOriginal.addEventListener('click', async event => {
-        event.preventDefault();
-        const item = state.destinations.find(x => x.id === state.selectedId);
-        if (!item) return;
-        await openRenderedOriginal(item);
-      });
-
-      el.editForm.addEventListener('submit', async event => {
-        event.preventDefault();
-        const group = getGroup(state.selectedGroupId);
-        const item = state.destinations.find(x => x.id === state.selectedId);
-        if (!group || !item) return;
-
-        const imageFile = el.editImageFile.files && el.editImageFile.files[0];
-        if (imageFile) {
-          const uploaded = await uploadPreviewImage(imageFile, item.id);
-          if (uploaded.image_url) item.image_url = uploaded.image_url;
-          if (uploaded.image_path) item.image_path = uploaded.image_path;
-        }
-
-        const title = el.editName.value.trim();
-        const topic = el.editTopic.value.trim() || item.topic;
-        const subtopic = el.editSubtopic.value.trim() || item.subtopic;
-        const tags = cleanTags([topic, subtopic, ...parseList(el.editCategories.value)]);
-        const nextGroupId = slugify(title || item.group_label || item.title);
-        const oldGroupId = item.group_id;
-
-        group.versions.forEach(version => {
-          version.group_label = title || version.group_label;
-          version.group_id = nextGroupId;
-          version.topic = topic;
-          version.subtopic = subtopic;
-          version.tags = tags;
-          version.category = tags[0] || topic;
-          version.group_tags = tags;
-          version.manual_classification = true;
-          version.reviewed_at = new Date().toISOString();
-        });
-
-        item.title = title || item.title;
-        item.url = el.editUrl.value.trim() || item.url;
-        item.address = item.url;
-        item.type = el.editType.value.trim() || item.type;
-        item.description = el.editDescription.value.trim();
-        item.website_status = el.editStatus.value || 'working';
-        item.image_url = el.editImageUrl.value.trim() || item.image_url || '';
-        item.renamed_at = new Date().toISOString();
-
-        delete state.preferred[oldGroupId];
-        state.preferred[nextGroupId] = item.id;
-        markPreferred(nextGroupId, item.id);
-        await persistAll();
-        closeAllModals();
-        rebuildGroups();
-        applyFilters();
-        showBanner('Saved.');
-      });
-
-      el.deleteEntryBtn.addEventListener('click', deleteSelectedEntry);
-
-      el.categoryForm.addEventListener('submit', event => event.preventDefault());
-      document.querySelectorAll('[data-close-modal]').forEach(btn => btn.addEventListener('click', () => closeModal(btn.dataset.closeModal)));
-      el.acceptSuggestionsBtn.addEventListener('click', acceptSuggestions);
-      el.savePlacementsBtn.addEventListener('click', savePlacements);
-      el.reviewLaterBtn.addEventListener('click', () => closeModal('reviewModal'));
-    }
-
-    async function loadDestinations() {
-      state.destinations = [];
-
-      if (!sb) {
-        showBanner('Supabase is not configured. Add your Supabase URL and anon key in config.js.');
-        return;
-      }
-
-      try {
-        const { data, error } = await sb
-          .from(ROUTES_TABLE)
-          .select('*')
-          .order('uploaded_at', { ascending: false });
-
-        if (error) throw error;
-
-        state.destinations = (data || []).map(normalizeDestination);
-        await loadRouteTags();
-      } catch (error) {
-        console.error(error);
-        showBanner('Unable to load projects from Supabase.');
-        state.destinations = [];
-      }
-    }
-
-    async function loadRouteTags() {
-      if (!sb || !state.destinations.length) return;
-      const ids = state.destinations.map(item => item.id);
-      const { data, error } = await sb.from(ROUTE_CATEGORIES_TABLE).select('route_id, category').in('route_id', ids);
-      if (error) throw error;
-      const byRoute = new Map();
-      (data || []).forEach(row => {
-        if (!byRoute.has(row.route_id)) byRoute.set(row.route_id, []);
-        byRoute.get(row.route_id).push(row.category);
-      });
-      state.destinations.forEach(item => {
-        const tags = byRoute.get(item.id);
-        if (tags && tags.length) item.tags = cleanTags(tags);
-      });
-    }
-
-    async function loadTags() {
-      state.tags = cleanTags(state.destinations.flatMap(item => item.tags || [item.topic, item.subtopic, item.category]));
-      if (sb) {
-        try {
-          const { data } = await sb.from(TAXONOMY_TABLE).select('topic, subtopic').order('topic', { ascending: true });
-          if (data && data.length) state.tags = cleanTags([...state.tags, ...data.flatMap(row => [row.topic, row.subtopic])]);
-        } catch (error) { console.warn(error); }
-      }
-      renderTagOptions();
-    }
-
-    function loadPendingReview() {
-      state.pendingReview = readJSON(pendingKey, []);
-    }
-
-    function setDevMode(enabled, options = {}) {
-      document.body.classList.toggle('dev-mode', enabled);
-      el.showcaseModeBtn.classList.toggle('active', !enabled);
-      el.devModeBtn.classList.toggle('active', enabled);
-      el.modeStatus.textContent = enabled ? 'Mode: Development' : 'Mode: Showcase';
-      localStorage.setItem(devKey, String(enabled));
-      if (!options.silent) showBanner(enabled ? 'Development mode enabled.' : 'Showcase mode enabled.');
-      if (state.groups.length) renderGrid();
-    }
-
-    function rebuildGroups() {
-      const byGroup = new Map();
-      state.destinations.forEach(item => {
-        item = normalizeDestination(item);
-        if (!byGroup.has(item.group_id)) byGroup.set(item.group_id, []);
-        byGroup.get(item.group_id).push(item);
-      });
-      state.groups = [...byGroup.entries()].map(([groupId, versions]) => {
-        versions.sort((a, b) => new Date(b.uploaded_at || 0) - new Date(a.uploaded_at || 0));
-        const preferredId = state.preferred[groupId] || versions.find(v => v.classification_status === 'preferred')?.id;
-        const active = versions.find(v => v.id === preferredId) || versions[0];
-        return { id: groupId, versions, active, latest: versions[0] };
-      }).sort((a, b) => new Date(b.active.uploaded_at || 0) - new Date(a.active.uploaded_at || 0));
-      state.destinations = state.destinations.map(normalizeDestination);
-    }
-
-    function buildFilters() {
-      const counts = new Map();
-      state.groups.forEach(group => {
-        const topic = group.active.topic || 'Portfolio';
-        counts.set(topic, (counts.get(topic) || 0) + 1);
-      });
-      const topics = [...counts.entries()]
-        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-        .slice(0, 4)
-        .map(([topic]) => topic);
-      const filters = ['All', ...topics].slice(0, 5);
-      if (!filters.includes(state.activeFilter)) state.activeFilter = 'All';
-      el.filters.innerHTML = '';
-      filters.forEach(filter => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'chip' + (state.activeFilter === filter ? ' active' : '');
-        btn.textContent = filter;
-        btn.addEventListener('click', () => {
-          state.activeFilter = filter;
-          applyFilters();
-        });
-        el.filters.appendChild(btn);
-      });
-    }
-
-    function applyFilters() {
-      rebuildGroups();
-      buildFilters();
-      const query = state.search;
-      state.filtered = state.groups.filter(group => {
-        const item = group.active;
-        const matchesFilter = state.activeFilter === 'All' || item.topic === state.activeFilter;
-        const haystack = [item.title, item.group_label, item.topic, item.subtopic, ...(item.tags || []), item.address, item.url, item.description, statusLabel(item.website_status), ...group.versions.map(v => v.source_name || v.title)].join(' ').toLowerCase();
-        return matchesFilter && (!query || haystack.includes(query));
-      }).sort((a, b) => new Date(b.active.uploaded_at || 0) - new Date(a.active.uploaded_at || 0));
-      renderGrid();
-    }
-
-    function renderGrid() {
-      el.routeCount.textContent = state.groups.length;
-      el.siteGrid.innerHTML = '';
-      el.emptyState.classList.toggle('visible', state.filtered.length === 0);
-
-      state.filtered.forEach(group => {
-        const item = group.active;
-        const node = el.cardTemplate.content.firstElementChild.cloneNode(true);
-        node.dataset.id = item.id;
-        node.dataset.groupId = group.id;
-        node.draggable = document.body.classList.contains('dev-mode');
-        node.style.cursor = 'pointer';
-
-        const previewEl = node.querySelector('.preview');
-        previewEl.className = 'preview ' + (item.image_url ? 'has-image' : (item.preview || 'portfolio'));
-        if (item.image_url) previewEl.style.setProperty('--image-url', `url('${cssUrl(item.image_url)}')`);
-
-        node.querySelector('.preview h3').textContent = item.group_label || item.title;
-        node.querySelector('.preview p').textContent = item.description || item.url;
-        const meta = node.querySelector('.meta');
-        meta.textContent = item.topic || item.type || 'Project';
-        meta.classList.toggle('web', /web|design/i.test(item.topic || ''));
-        meta.classList.toggle('personal', /personal|ai|learning/i.test(item.topic || ''));
-        meta.classList.toggle('ui', /ui|tool/i.test(item.topic || ''));
-
-        const statusEl = node.querySelector('.status-dot');
-        statusEl.dataset.status = item.website_status || 'working';
-        statusEl.title = statusLabel(item.website_status);
-        node.querySelector('.card-title').textContent = item.group_label || item.title;
-        node.querySelector('.card-desc').textContent = item.description || item.url;
-        renderTags(node.querySelector('.tag-row'), cleanTags([item.topic, item.subtopic, ...(item.tags || [])]));
-
-        const versionBadge = document.createElement('span');
-        versionBadge.className = 'tag-pill';
-        versionBadge.textContent = `${group.versions.length} version${group.versions.length === 1 ? '' : 's'}`;
-        node.querySelector('.tag-row').appendChild(versionBadge);
-
-        node.addEventListener('click', event => {
-          if (event.target.closest('button, a, input, select, textarea')) return;
-          openViewer(item.id);
-        });
-        node.querySelector('.card-title').addEventListener('click', event => { event.stopPropagation(); openViewer(item.id); });
-        node.querySelector('.icon-btn').addEventListener('click', event => {
-          event.stopPropagation();
-          openRenderedOriginal(item);
-        });
-        node.querySelector('.more').addEventListener('click', event => { event.stopPropagation(); openEdit(group.id); });
-
-        node.addEventListener('dragstart', event => {
-          if (!document.body.classList.contains('dev-mode')) { event.preventDefault(); return; }
-          state.draggedGroupId = group.id;
-          node.classList.add('dragging');
-          event.dataTransfer.effectAllowed = 'move';
-        });
-        node.addEventListener('dragend', () => node.classList.remove('dragging'));
-        node.addEventListener('dragover', event => {
-          if (!document.body.classList.contains('dev-mode')) return;
-          event.preventDefault();
-          node.classList.add('drop-hint');
-        });
-        node.addEventListener('dragleave', () => node.classList.remove('drop-hint'));
-        node.addEventListener('drop', async event => {
-          event.preventDefault();
-          node.classList.remove('drop-hint');
-          if (!document.body.classList.contains('dev-mode')) return;
-          await reclassifyByDrop(state.draggedGroupId, group.id);
-        });
-        el.siteGrid.appendChild(node);
-      });
-    }
-
-    async function reclassifyByDrop(sourceGroupId, targetGroupId) {
-      if (!sourceGroupId || !targetGroupId || sourceGroupId === targetGroupId) return;
-      const source = getGroup(sourceGroupId);
-      const target = getGroup(targetGroupId);
-      if (!source || !target) return;
-      const targetItem = target.active;
-      source.versions.forEach(version => {
-        version.topic = targetItem.topic;
-        version.subtopic = targetItem.subtopic;
-        version.tags = cleanTags([targetItem.topic, targetItem.subtopic, ...(targetItem.tags || [])]);
-        version.category = version.tags[0] || targetItem.topic;
-        version.manual_classification = true;
-        version.reviewed_at = new Date().toISOString();
-      });
-      await persistAll();
-      applyFilters();
-    }
-
-    async function handleAction(action) {
-      switch (action) {
-        case 'backTop': window.scrollTo({ top: 0, behavior: 'smooth' }); break;
-        case 'focusSearch': el.searchInput.focus(); break;
-        case 'focusAdd': el.newTitle.focus(); break;
-        case 'upload': el.topbarUploadInput.click(); break;
-        case 'openSelected': openViewer(state.selectedId || state.filtered[0]?.active?.id); break;
-        case 'renameSelected':
-        case 'editSelected': openEdit(state.selectedGroupId || state.filtered[0]?.id); break;
-        case 'manageCategories': openTopicIndex(); break;
-        case 'review': openReviewModal(); break;
-        case 'sync': await syncSupabase(); break;
-        case 'clearState': await clearState(); break;
-      }
-    }
-
-    async function openViewer(id) {
-      const item = state.destinations.find(x => x.id === id);
-      if (!item) { showBanner('Select a project first.'); return; }
-
-      // Live links should open directly instead of using the embedded viewer.
-      if (!isHtmlLike(item)) {
-        window.open(item.url, "_blank", "noopener");
-        return;
-      }
-      const group = getGroup(item.group_id);
-      state.selectedId = item.id;
-      state.selectedGroupId = item.group_id;
-      el.viewerTitle.textContent = item.group_label || item.title;
-      el.viewerAddress.textContent = [item.topic, item.subtopic, versionLabel(item)].filter(Boolean).join(' · ');
-      el.openOriginal.href = item.url;
-      await loadViewerContent(item);
-      item.last_accessed_at = new Date().toISOString();
-      renderViewerVersionPicker(group, item.id);
-      persistAll({ skipRemoteLocalOnly: true });
-      document.body.classList.add('viewer-open');
-    }
-
-    function renderViewerVersionPicker(group, activeId) {
-      const actions = document.querySelector('.viewer-actions');
-      actions.querySelectorAll('.version-select, .version-note').forEach(x => x.remove());
-      if (!group || group.versions.length < 2) return;
-      const select = document.createElement('select');
-      select.className = 'version-select';
-      select.setAttribute('aria-label', 'Project version');
-      group.versions.forEach(version => {
-        const option = document.createElement('option');
-        option.value = version.id;
-        option.textContent = versionLabel(version);
-        option.selected = version.id === activeId;
-        select.appendChild(option);
-      });
-      select.addEventListener('change', async () => {
-        const next = state.destinations.find(x => x.id === select.value);
-        if (!next) return;
-        state.preferred[group.id] = next.id;
-        markPreferred(group.id, next.id);
-        await persistAll();
-        openViewer(next.id);
-        applyFilters();
-      });
-      actions.prepend(select);
-    }
-
-    function closeViewer() {
-      document.body.classList.remove('viewer-open');
-      el.viewerFrame.src = 'about:blank';
-      el.viewerFrame.srcdoc = '';
-    }
-
-    async function loadViewerContent(item) {
-      el.viewerFrame.src = 'about:blank';
-      el.viewerFrame.srcdoc = '';
-
-      if (!isHtmlLike(item)) {
-        el.viewerFrame.src = item.url;
-        return;
-      }
-
-      try {
-        const html = await fetchHtmlDocument(item.url);
-        el.viewerFrame.srcdoc = html;
-      } catch (error) {
-        console.warn(error);
-        el.viewerFrame.src = item.url;
-      }
-    }
-
-    /**
-     * Opens an HTML upload as a rendered page in a new tab (no viewer chrome).
-     * Storage URLs often serve HTML as text/plain, so we re-open via a text/html blob.
-     * @param {object} item Destination item to open.
-     */
-    async function openRenderedOriginal(item) {
-      if (!item?.url) return;
-
-      if (!isHtmlLike(item)) {
-        window.open(item.url, '_blank', 'noopener');
-        return;
-      }
-
-      try {
-        const html = await fetchHtmlDocument(item.url);
-        const blobUrl = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
-        window.open(blobUrl, '_blank', 'noopener');
-        // Keep the blob alive long enough for the new tab to load.
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
-      } catch (error) {
-        console.warn(error);
-        showBanner('Could not open the original HTML page.');
-      }
-    }
-
-    /**
-     * Fetches HTML text from a URL and rejects empty responses.
-     * @param {string} url Public URL of the HTML document.
-     * @returns {Promise<string>}
-     */
-    async function fetchHtmlDocument(url) {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`Failed to fetch HTML (${response.status})`);
-      const html = await response.text();
-      if (!html.trim()) throw new Error('Empty HTML response');
-      return html;
-    }
-
-    function openEdit(groupId) {
-      if (!document.body.classList.contains('dev-mode')) { showBanner('Turn on development mode to edit.'); return; }
-      const group = getGroup(groupId);
-      if (!group) { showBanner('Select a project first.'); return; }
-      const item = group.active;
-      state.selectedGroupId = group.id;
-      state.selectedId = item.id;
-
-      el.editName.value = item.group_label || item.title || '';
-      el.editUrl.value = item.url || '';
-      el.editStatus.value = item.website_status || 'working';
-      el.editDescription.value = item.description || '';
-      el.editCategories.value = cleanTags(item.tags || [item.topic, item.subtopic]).join(', ');
-      el.editTopic.value = item.topic || '';
-      el.editSubtopic.value = item.subtopic || '';
-      el.editImageUrl.value = item.image_url || '';
-      el.editImageFile.value = '';
-      el.editType.value = item.type || '';
-      ensureEditVersionPicker(group, item.id);
-      openModal('editModal');
-      setTimeout(() => el.editName.focus(), 60);
-    }
-
-    function ensureEditVersionPicker(group, activeId) {
-      let wrapper = document.getElementById('editVersionWrapper');
-      if (!wrapper) {
-        wrapper = document.createElement('div');
-        wrapper.id = 'editVersionWrapper';
-        wrapper.className = 'field';
-        wrapper.style.marginTop = '12px';
-        wrapper.innerHTML = '<label for="editVersionSelect">Route version</label><select id="editVersionSelect" class="version-select" style="border-radius:10px;max-width:none;width:100%;"></select>';
-        el.editForm.insertBefore(wrapper, el.editForm.querySelector('.modal-actions'));
-      }
-      const select = document.getElementById('editVersionSelect');
-      select.innerHTML = '';
-      group.versions.forEach(version => {
-        const option = document.createElement('option');
-        option.value = version.id;
-        option.textContent = versionLabel(version);
-        option.selected = version.id === activeId;
-        select.appendChild(option);
-      });
-      select.onchange = () => {
-        const next = state.destinations.find(x => x.id === select.value);
-        if (!next) return;
-        state.selectedId = next.id;
-        el.editUrl.value = next.url || '';
-        el.editStatus.value = next.website_status || 'working';
-        el.editDescription.value = next.description || '';
-        el.editImageUrl.value = next.image_url || '';
-        el.editType.value = next.type || '';
-      };
-    }
-
-    function openTopicIndex() {
-      renderTopicIndex();
-      openModal('categoryModal');
-    }
-
-    function renderTopicIndex() {
-      el.categoryList.innerHTML = '';
-      const topics = cleanTags(state.groups.map(group => group.active.topic)).slice(0, 5);
-      topics.forEach(topic => {
-        const token = document.createElement('span');
-        token.className = 'category-token';
-        token.innerHTML = `<span>${escapeHTML(topic)}</span>`;
-        el.categoryList.appendChild(token);
-      });
-      if (!el.categoryList.children.length) el.categoryList.textContent = 'No topics yet.';
-    }
-
-    async function uploadHtmlFiles(fileList) {
-      if (!document.body.classList.contains('dev-mode')) { showBanner('Turn on development mode to upload HTML.'); return; }
-      const files = [...fileList].filter(file => /\.html?$/i.test(file.name));
-      if (!files.length) { showBanner('Choose one or more .html files.'); return; }
-      if (!sb) { showBanner('Supabase is not configured. Add your Supabase URL and anon key before uploading.'); return; }
-
-      const created = [];
-      for (const file of files) {
-        const suggestion = suggestClassification(file.name);
-        const id = uid();
-        const groupId = projectGroupId(file.name);
-        const filePath = `${groupId}/${id}-${file.name.replace(/[^a-z0-9._-]/gi, '-')}`;
-        let publicUrl = '';
-        try {
-          const { error: uploadError } = await sb.storage.from(UPLOAD_BUCKET).upload(filePath, file, {
-            contentType: 'text/html',
-            metadata: { mimetype: 'text/html', source_name: file.name },
-            upsert: false
-          });
-          if (uploadError) throw uploadError;
-          const { data: publicData } = sb.storage.from(UPLOAD_BUCKET).getPublicUrl(filePath);
-          publicUrl = publicData.publicUrl;
-        } catch (error) {
-          console.warn(error);
-          showBanner(`Could not upload ${file.name} to Supabase Storage. No local fallback was saved.`);
-          continue;
-        }
-
-        const existingGroup = state.destinations.find(x => x.group_id === groupId);
-        const groupLabel = existingGroup?.group_label || cleanProjectName(file.name);
-        const item = normalizeDestination({
-          id,
-          mode: 'upload',
-          type: 'HTML Files',
-          title: cleanName(file.name),
-          description: existingGroup?.description || 'Uploaded HTML project.',
-          website_status: 'under_construction',
-          address: publicUrl,
-          url: publicUrl,
-          source_name: file.name,
-          file_path: filePath,
-          topic: existingGroup?.topic || suggestion.topic,
-          subtopic: existingGroup?.subtopic || suggestion.subtopic,
-          group_label: groupLabel,
-          group_id: groupId,
-          tags: existingGroup?.tags || [suggestion.topic, suggestion.subtopic],
-          category: suggestion.topic,
-          classification_status: 'version',
-          manual_classification: false,
-          uploaded_at: new Date().toISOString(),
-          preview: suggestion.preview,
-          local_only: false,
-          original_name: file.name
-        });
-        state.destinations.push(item);
-        state.pendingReview.push(item);
-        created.push(item);
-      }
-
-      writeJSON(pendingKey, state.pendingReview);
-      await persistAll({ skipRemoteLocalOnly: true });
-      rebuildGroups();
-      applyFilters();
-      el.topbarUploadInput.value = '';
-      el.panelUploadInput.value = '';
-      if (created.length) openReviewModal();
-      showBanner(`${created.length} upload${created.length === 1 ? '' : 's'} added.`);
-    }
-
-    function suggestClassification(fileName) {
-      const name = fileName.toLowerCase();
-      if (name.includes('matcha')) return { topic: 'Matcha', subtopic: 'Tracker', preview: 'matcha' };
-      if (name.includes('ai') || name.includes('llm') || name.includes('genai') || name.includes('chatbot')) return { topic: 'AI Learning', subtopic: 'Experiment', preview: 'dark' };
-      if (name.includes('japanese') || name.includes('flash')) return { topic: 'Learning', subtopic: 'Japanese', preview: 'flash' };
-      if (name.includes('workout') || name.includes('fitness')) return { topic: 'Fitness', subtopic: 'Workout', preview: 'workout' };
-      if (name.includes('smoothie')) return { topic: 'Food', subtopic: 'Smoothie', preview: 'smoothie' };
-      if (name.includes('navigator') || name.includes('library')) return { topic: 'Tools', subtopic: 'Navigator', preview: 'dark' };
-      if (name.includes('travel')) return { topic: 'Travel', subtopic: 'Guide', preview: 'travel' };
-      if (name.includes('check')) return { topic: 'Productivity', subtopic: 'Checklist', preview: 'checklist' };
-      return { topic: firstTopic() || 'Portfolio', subtopic: 'General', preview: 'portfolio' };
-    }
-
-    function openReviewModal() {
-      if (!document.body.classList.contains('dev-mode')) { showBanner('Turn on development mode to organize uploads.'); return; }
-      renderReviewList();
-      openModal('reviewModal');
-    }
-
-    function renderReviewList() {
-      el.reviewList.innerHTML = '';
-      if (!state.pendingReview.length) {
-        el.reviewList.innerHTML = '<p>No uploads are waiting for review.</p>';
-        return;
-      }
-      state.pendingReview.forEach(item => {
-        const row = document.createElement('div');
-        row.className = 'review-item';
-        row.dataset.id = item.id;
-        row.innerHTML = `
-          <strong>${escapeHTML(item.title)}</strong>
+    </section>
+
+    <input
+      id="topbarUploadInput"
+      class="visually-hidden"
+      type="file"
+      accept=".html,text/html"
+      multiple
+    />
+
+    <div
+      id="editModal"
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="editTitle"
+    >
+      <div class="modal">
+        <h2 id="editTitle">Edit project</h2>
+        <p>
+          Update the project card. For uploaded HTML files, changing the display
+          name does not rename or modify the original upload.
+        </p>
+        <form id="editForm">
           <div class="review-grid">
-            <label class="field"><span>Topic</span><input data-review-field="topic" value="${escapeAttr(item.topic)}"></label>
-            <label class="field"><span>Subtopic</span><input data-review-field="subtopic" value="${escapeAttr(item.subtopic)}"></label>
-            <label class="field"><span>Tags</span><input data-review-field="tags" value="${escapeAttr(cleanTags(item.tags || [item.topic, item.subtopic]).join(', '))}"></label>
+            <label class="field"
+              ><span>Display name</span><input id="editName" required
+            /></label>
+            <label class="field"
+              ><span>URL</span><input id="editUrl" type="url"
+            /></label>
+            <label class="field"
+              ><span>Status</span
+              ><select id="editStatus">
+                <option value="working">Working</option>
+                <option value="under_construction">Under construction</option>
+                <option value="broken">Broken</option>
+              </select></label
+            >
           </div>
-        `;
-        el.reviewList.appendChild(row);
-      });
-    }
+          <div class="field" style="margin-top: 12px">
+            <label for="editDescription">Description</label>
+            <textarea id="editDescription"></textarea>
+          </div>
+          <div class="review-grid" style="margin-top: 12px">
+            <label class="field"
+              ><span>Tags</span
+              ><input
+                id="editCategories"
+                list="categoryOptions"
+                placeholder="Matcha, Tools"
+            /></label>
+            <label class="field"
+              ><span>Topic</span><input id="editTopic"
+            /></label>
+            <label class="field"
+              ><span>Subtopic</span><input id="editSubtopic"
+            /></label>
+          </div>
+          <div class="review-grid" style="margin-top: 12px">
+            <label class="field"
+              ><span>Preview image URL</span
+              ><input
+                id="editImageUrl"
+                type="url"
+                placeholder="https://example.com/preview.png"
+            /></label>
+            <label class="field"
+              ><span>Upload preview image</span
+              ><input id="editImageFile" type="file" accept="image/*"
+            /></label>
+            <label class="field"
+              ><span>Type</span><input id="editType" placeholder="Live Links"
+            /></label>
+          </div>
+          <div class="modal-actions">
+            <button id="deleteEntryBtn" class="danger-btn" type="button">
+              Delete Entry
+            </button>
+            <button
+              class="ghost-btn"
+              type="button"
+              data-close-modal="editModal"
+            >
+              Cancel
+            </button>
+            <button class="primary-btn" type="submit">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
 
-    function acceptSuggestions() {
-      state.pendingReview.forEach(item => {
-        const suggestion = suggestClassification(item.original_name || item.title);
-        item.topic = suggestion.topic;
-        item.subtopic = suggestion.subtopic;
-        item.tags = cleanTags([suggestion.topic, suggestion.subtopic]);
-        item.preview = suggestion.preview;
-      });
-      renderReviewList();
-    }
+    <div
+      id="categoryModal"
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="categoryTitle"
+    >
+      <div class="modal">
+        <h2 id="categoryTitle">Topic index</h2>
+        <p>Topics are derived from saved projects.</p>
+        <form id="categoryForm" class="category-manager">
+          <div class="field">
+            <label for="categoryNameInput">Topic</label>
+            <input id="categoryNameInput" placeholder="AI Learning" disabled />
+          </div>
+          <button class="primary-btn" type="submit" disabled>
+            Topics are automatic
+          </button>
+        </form>
+        <div id="categoryList" class="category-list" aria-live="polite"></div>
+        <div class="modal-actions">
+          <button
+            class="ghost-btn"
+            type="button"
+            data-close-modal="categoryModal"
+          >
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
 
-    async function savePlacements() {
-      [...el.reviewList.querySelectorAll('.review-item')].forEach(row => {
-        const item = state.destinations.find(x => x.id === row.dataset.id);
-        if (!item) return;
-        const topic = row.querySelector('[data-review-field="topic"]').value.trim() || item.topic;
-        const subtopic = row.querySelector('[data-review-field="subtopic"]').value.trim() || item.subtopic;
-        const tags = parseList(row.querySelector('[data-review-field="tags"]').value);
-        item.topic = topic;
-        item.subtopic = subtopic;
-        item.tags = cleanTags([topic, subtopic, ...tags]);
-        item.category = item.tags[0] || topic;
-        item.manual_classification = true;
-        item.classification_status = 'reviewed';
-        item.reviewed_at = new Date().toISOString();
-      });
-      state.pendingReview = [];
-      writeJSON(pendingKey, state.pendingReview);
-      await persistAll({ skipRemoteLocalOnly: true });
-      closeModal('reviewModal');
-      rebuildGroups();
-      applyFilters();
-      showBanner('Saved.');
-    }
+    <div
+      id="reviewModal"
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="reviewTitle"
+    >
+      <div class="modal">
+        <h2 id="reviewTitle">Organize uploads</h2>
+        <p>Adjust topic and subtopic before saving.</p>
+        <div id="reviewList" class="review-list"></div>
+        <div class="modal-actions">
+          <button id="reviewLaterBtn" class="ghost-btn" type="button">
+            Review Later
+          </button>
+          <button id="acceptSuggestionsBtn" class="ghost-btn" type="button">
+            Accept Suggestions
+          </button>
+          <button id="savePlacementsBtn" class="primary-btn" type="button">
+            Save Placements
+          </button>
+        </div>
+      </div>
+    </div>
 
-    async function deleteSelectedEntry() {
-      if (!document.body.classList.contains('dev-mode')) {
-        showBanner('Turn on development mode to delete.');
-        return;
-      }
+    <template id="cardTemplate">
+      <article class="card" draggable="true">
+        <div class="browser-bar">
+          <span class="dot"></span><span class="dot"></span
+          ><span class="dot"></span>
+        </div>
+        <div class="preview">
+          <div class="preview-inner">
+            <div class="mini-brand">Portfolio</div>
+            <h3></h3>
+            <p></p>
+            <span class="pill-mini">Open</span>
+          </div>
+        </div>
+        <span class="status-dot" title="Status"></span>
+        <button class="more" title="More actions" type="button">⋮</button>
+        <div class="card-body">
+          <div class="meta"></div>
+          <div class="card-title-row">
+            <button class="card-title" type="button"></button>
+            <button class="icon-btn" title="Open original" type="button">
+              ↗
+            </button>
+          </div>
+          <p class="card-desc"></p>
+          <div class="tag-row"></div>
+        </div>
+      </article>
+    </template>
 
-      const item = state.destinations.find(x => x.id === state.selectedId);
-      if (!item) {
-        showBanner('Select a project first.');
-        return;
-      }
-
-      const label = item.group_label || item.title || 'this entry';
-      const ok = confirm(`Delete ${label}? This removes this entry from Supabase and from the page.`);
-      if (!ok) return;
-
-      try {
-        if (sb && !item.local_only && item.id) {
-          await sb.from(ROUTE_CATEGORIES_TABLE).delete().eq('route_id', item.id);
-          const { error } = await sb.from(ROUTES_TABLE).delete().eq('id', item.id);
-          if (error) throw error;
-
-          if (item.file_path) {
-            const { error: storageError } = await sb.storage.from(UPLOAD_BUCKET).remove([item.file_path]);
-            if (storageError) console.warn(storageError);
-          }
-          if (item.image_path) {
-            const { error: imageStorageError } = await sb.storage.from(UPLOAD_BUCKET).remove([item.image_path]);
-            if (imageStorageError) console.warn(imageStorageError);
-          }
-        }
-
-        state.destinations = state.destinations.filter(x => x.id !== item.id);
-        state.pendingReview = state.pendingReview.filter(x => x.id !== item.id);
-        if (state.preferred[item.group_id] === item.id) delete state.preferred[item.group_id];
-
-        writeJSON(pendingKey, state.pendingReview);
-        writeJSON(preferredKey, state.preferred);
-
-        closeAllModals();
-        rebuildGroups();
-        applyFilters();
-        showBanner('Deleted.');
-      } catch (error) {
-        console.error(error);
-        showBanner('Could not delete this entry from Supabase. Check table policies.');
-      }
-    }
-
-    async function persistAll(options = {}) {
-      state.tags = cleanTags(state.destinations.flatMap(item => item.tags || [item.topic, item.subtopic]));
-      writeJSON(preferredKey, state.preferred);
-      renderTagOptions();
-      if (!sb) return;
-      const rows = options.skipRemoteLocalOnly ? state.destinations.filter(x => !x.local_only && !(x.url || '').startsWith('blob:')) : state.destinations;
-      try {
-        const routeRows = rows.map(toRouteRow);
-        if (routeRows.length) {
-          const { error } = await sb.from(ROUTES_TABLE).upsert(routeRows, { onConflict: 'id' });
-          if (error) throw error;
-        }
-        await upsertTaxonomy(routeRows);
-        await upsertTags(rows);
-      } catch (error) {
-        console.warn(error);
-        showBanner('Saved locally. Supabase sync needs storage/table policies.');
-      }
-    }
-
-    async function syncSupabase() {
-      if (!sb) { showBanner('Add Supabase URL and anon key before syncing.'); return; }
-      await persistAll({ skipRemoteLocalOnly: true });
-      showBanner('Synced.');
-    }
-
-    async function clearState() {
-      const ok = confirm('Clear localStorage, sessionStorage, and available IndexedDB databases, then reload?');
-      if (!ok) return;
-      window.dispatchEvent(new CustomEvent('navigator:clear-state'));
-      localStorage.clear();
-      sessionStorage.clear();
-      if (indexedDB.databases) {
-        try {
-          const dbs = await indexedDB.databases();
-          await Promise.all(dbs.filter(db => db.name).map(db => new Promise(resolve => {
-            const req = indexedDB.deleteDatabase(db.name);
-            req.onsuccess = req.onerror = req.onblocked = resolve;
-          })));
-        } catch (error) { console.warn(error); }
-      }
-      location.reload();
-    }
-
-    function normalizeDestination(raw) {
-      const url = raw.url || raw.address || '#';
-      const groupLabel = raw.group_label || raw.project_title || raw.title || raw.source_name || 'Untitled';
-      const groupId = raw.group_id || projectGroupId(groupLabel);
-      const topic = raw.topic || raw.category || 'Portfolio';
-      const subtopic = raw.subtopic || '';
-      const tags = cleanTags(raw.tags || raw.categories || [topic, subtopic, raw.category, raw.group_label]);
-      return {
-        id: raw.id || uid(),
-        mode: raw.mode || (raw.file_path ? 'upload' : 'url'),
-        title: (raw.title || raw.name || raw.source_name || groupLabel || 'Untitled').trim(),
-        description: raw.description || '',
-        address: raw.address || url,
-        url,
-        type: raw.type || (raw.mode === 'upload' ? 'HTML Files' : 'Live Links'),
-        topic,
-        subtopic,
-        category: raw.category || tags[0] || topic,
-        tags,
-        group_label: groupLabel,
-        group_id: groupId,
-        classification_status: raw.classification_status || '',
-        manual_classification: Boolean(raw.manual_classification),
-        website_status: raw.website_status || raw.status || 'working',
-        image_url: raw.image_url || raw.preview_image_url || '',
-        image_path: raw.image_path || raw.preview_image_path || '',
-        source_name: raw.source_name || raw.original_name || raw.originalName || '',
-        file_path: raw.file_path || '',
-        preview: raw.preview || previewFromText([raw.title, topic, subtopic, raw.source_name].join(' ')),
-        original_name: raw.original_name || raw.originalName || raw.source_name || '',
-        local_only: Boolean(raw.local_only),
-        uploaded_at: raw.uploaded_at || raw.created_at || new Date().toISOString(),
-        last_accessed_at: raw.last_accessed_at || null,
-        renamed_at: raw.renamed_at || null,
-        reviewed_at: raw.reviewed_at || null
-      };
-    }
-
-    function toRouteRow(item) {
-      return {
-        id: item.id,
-        mode: item.mode || ((item.file_path || item.source_name) ? 'upload' : 'url'),
-        type: item.type || null,
-        title: item.title || null,
-        description: item.description || null,
-        address: item.address || item.url || null,
-        url: item.url || item.address || null,
-        source_name: item.source_name || item.original_name || null,
-        file_path: item.file_path || null,
-        topic: item.topic || null,
-        subtopic: item.subtopic || null,
-        group_label: item.group_label || item.title || null,
-        group_id: item.group_id || projectGroupId(item.group_label || item.title || item.source_name || ''),
-        classification_status: item.classification_status || null,
-        manual_classification: Boolean(item.manual_classification),
-        uploaded_at: item.uploaded_at || new Date().toISOString(),
-        last_accessed_at: item.last_accessed_at || null,
-        renamed_at: item.renamed_at || null,
-        reviewed_at: item.reviewed_at || null,
-        website_status: item.website_status || 'working',
-        image_url: item.image_url || null,
-        image_path: item.image_path || null
-      };
-    }
-
-    async function upsertTaxonomy(routeRows) {
-      if (!sb) return;
-      const taxonomyRows = unique(routeRows.filter(row => row.topic && row.subtopic).map(row => `${row.topic}|||${row.subtopic}`)).map(value => {
-        const [topic, subtopic] = value.split('|||');
-        return { topic, subtopic };
-      });
-      if (!taxonomyRows.length) return;
-      const { error } = await sb.from(TAXONOMY_TABLE).upsert(taxonomyRows, { onConflict: 'topic,subtopic' });
-      if (error) throw error;
-    }
-
-    async function upsertTags(items) {
-      if (!sb) return;
-      const allTags = cleanTags(items.flatMap(item => item.tags || [item.topic, item.subtopic]));
-      const categoryRows = allTags.map(name => ({ name, slug: slugify(name), created_at: new Date().toISOString() }));
-      if (categoryRows.length) {
-        const { error: catError } = await sb.from(CATEGORIES_TABLE).upsert(categoryRows, { onConflict: 'slug' });
-        if (catError) console.warn(catError);
-      }
-      const linkRows = items.flatMap(item => cleanTags(item.tags || [item.topic, item.subtopic]).map(category => ({ route_id: item.id, category, created_at: new Date().toISOString() })));
-      if (!linkRows.length) return;
-      const routeIds = unique(items.map(item => item.id));
-      await sb.from(ROUTE_CATEGORIES_TABLE).delete().in('route_id', routeIds);
-      const { error } = await sb.from(ROUTE_CATEGORIES_TABLE).upsert(linkRows, { onConflict: 'route_id,category' });
-      if (error) throw error;
-    }
-
-    async function uploadPreviewImage(file, ownerId = uid()) {
-      if (!sb) return { image_url: '', image_path: '' };
-      const ext = (file.name.split('.').pop() || 'png').replace(/[^a-z0-9]/gi, '').toLowerCase();
-      const path = `previews/${ownerId}-${Date.now()}.${ext}`;
-      try {
-        const { error } = await sb.storage.from(UPLOAD_BUCKET).upload(path, file, {
-          contentType: file.type || 'image/png',
-          metadata: { mimetype: file.type || 'image/png', source_name: file.name },
-          upsert: true
-        });
-        if (error) throw error;
-        const { data } = sb.storage.from(UPLOAD_BUCKET).getPublicUrl(path);
-        return { image_url: data.publicUrl, image_path: path };
-      } catch (error) {
-        console.warn(error);
-        showBanner('Could not upload preview image to Supabase. No local preview was saved.');
-        return { image_url: '', image_path: '' };
-      }
-    }
-
-    function markPreferred(groupId, itemId) {
-      state.destinations.forEach(item => {
-        if (item.group_id === groupId) item.classification_status = item.id === itemId ? 'preferred' : 'version';
-      });
-    }
-
-    function getGroup(groupId) {
-      rebuildGroups();
-      return state.groups.find(group => group.id === groupId);
-    }
-
-    function renderTags(container, tags) {
-      container.innerHTML = '';
-      cleanTags(tags).slice(0, 3).forEach(tag => {
-        const pill = document.createElement('span');
-        pill.className = 'tag-pill';
-        pill.textContent = tag;
-        container.appendChild(pill);
-      });
-    }
-
-    function renderTagOptions() {
-      const options = document.getElementById('categoryOptions');
-      if (!options) return;
-      options.innerHTML = cleanTags(state.tags).slice(0, 50).map(tag => `<option value="${escapeAttr(tag)}"></option>`).join('');
-    }
-
-    function versionLabel(version) {
-      const date = version.uploaded_at ? new Date(version.uploaded_at) : null;
-      const dateLabel = date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown date';
-      return `${dateLabel} · ${version.source_name || version.title}`;
-    }
-
-    function statusLabel(status) {
-      return ({ working: 'Working', under_construction: 'Under construction', broken: 'Broken' })[status] || 'Working';
-    }
-
-    function firstTopic() {
-      const groupTopic = state.groups.find(group => group.active.topic)?.active.topic;
-      return groupTopic || 'Portfolio';
-    }
-
-    function projectGroupId(fileName) {
-      return slugify(cleanProjectName(fileName));
-    }
-
-    function cleanProjectName(fileName) {
-      return cleanName(fileName)
-        .replace(/\s*\(?\d+\)?\s*$/i, '')
-        .replace(/\s+(copy|final|latest|updated|new)$/i, '')
-        .replace(/\s+v\d+$/i, '')
-        .trim() || cleanName(fileName);
-    }
-
-    function previewFromText(text) {
-      text = String(text || '').toLowerCase();
-      if (text.includes('matcha')) return 'matcha';
-      if (text.includes('japanese') || text.includes('flash')) return 'flash';
-      if (text.includes('workout') || text.includes('fitness')) return 'workout';
-      if (text.includes('smoothie')) return 'smoothie';
-      if (text.includes('navigator') || text.includes('library') || text.includes('ai')) return 'dark';
-      if (text.includes('travel')) return 'travel';
-      if (text.includes('check')) return 'checklist';
-      if (text.includes('collection')) return 'collection';
-      return 'portfolio';
-    }
-
-    function isHtmlLike(item) {
-      const value = `${item?.url || ''} ${item?.source_name || ''} ${item?.file_path || ''}`.toLowerCase();
-      return item?.mode === 'upload' || item?.type === 'HTML Files' || /\.html?(?:$|[?#])/.test(value);
-    }
-
-    function cssUrl(value) { return String(value || '').replace(/[\'"()]/g, encodeURIComponent); }
-    function parseList(value) { return Array.isArray(value) ? value : String(value || '').split(',').map(x => x.trim()); }
-    function cleanTags(list) { return unique(parseList(list).flatMap(x => Array.isArray(x) ? x : [x]).map(x => String(x || '').trim()).filter(Boolean)); }
-    function unique(list) { return [...new Set(list.filter(Boolean).map(x => String(x).trim()).filter(Boolean))]; }
-    function slugify(value) { return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'portfolio'; }
-    function daysAgo(days) { return new Date(Date.now() - days * 86400000).toISOString(); }
-    function openModal(id) { document.getElementById(id).classList.add('visible'); }
-    function closeModal(id) { document.getElementById(id).classList.remove('visible'); }
-    function closeAllModals() { document.querySelectorAll('.modal-backdrop').forEach(x => x.classList.remove('visible')); }
-    function showBanner(message) {
-      el.banner.textContent = message;
-      el.banner.classList.add('visible');
-      clearTimeout(showBanner.timer);
-      showBanner.timer = setTimeout(() => el.banner.classList.remove('visible'), 4200);
-    }
-    function readJSON(key, fallback) {
-      try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
-      catch { return fallback; }
-    }
-    function writeJSON(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
-    function uid() { return (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Math.random().toString(16).slice(2) + Date.now()); }
-    function cleanName(fileName) { return String(fileName || '').replace(/\.html?$/i, '').replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase()); }
-    function escapeHTML(value) { return String(value).replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c])); }
-    function escapeAttr(value) { return escapeHTML(value).replace(/`/g, '&#96;'); }
-  </script>
-</body>
+    <script src="./app.js"></script>
+  </body>
 </html>
