@@ -1053,6 +1053,12 @@
       el.topbarUploadInput.addEventListener('change', event => uploadHtmlFiles(event.target.files));
       el.panelUploadInput.addEventListener('change', event => uploadHtmlFiles(event.target.files));
       el.backToNavigator.addEventListener('click', closeViewer);
+      el.openOriginal.addEventListener('click', async event => {
+        event.preventDefault();
+        const item = state.destinations.find(x => x.id === state.selectedId);
+        if (!item) return;
+        await openRenderedOriginal(item);
+      });
 
       el.editForm.addEventListener('submit', async event => {
         event.preventDefault();
@@ -1277,7 +1283,10 @@
           openViewer(item.id);
         });
         node.querySelector('.card-title').addEventListener('click', event => { event.stopPropagation(); openViewer(item.id); });
-        node.querySelector('.icon-btn').addEventListener('click', event => { event.stopPropagation(); window.open(item.url, '_blank', 'noopener'); });
+        node.querySelector('.icon-btn').addEventListener('click', event => {
+          event.stopPropagation();
+          openRenderedOriginal(item);
+        });
         node.querySelector('.more').addEventListener('click', event => { event.stopPropagation(); openEdit(group.id); });
 
         node.addEventListener('dragstart', event => {
@@ -1401,14 +1410,50 @@
       }
 
       try {
-        const response = await fetch(item.url);
-        const html = await response.text();
-        if (!html.trim()) throw new Error('Empty HTML response');
+        const html = await fetchHtmlDocument(item.url);
         el.viewerFrame.srcdoc = html;
       } catch (error) {
         console.warn(error);
         el.viewerFrame.src = item.url;
       }
+    }
+
+    /**
+     * Opens an HTML upload as a rendered page in a new tab (no viewer chrome).
+     * Storage URLs often serve HTML as text/plain, so we re-open via a text/html blob.
+     * @param {object} item Destination item to open.
+     */
+    async function openRenderedOriginal(item) {
+      if (!item?.url) return;
+
+      if (!isHtmlLike(item)) {
+        window.open(item.url, '_blank', 'noopener');
+        return;
+      }
+
+      try {
+        const html = await fetchHtmlDocument(item.url);
+        const blobUrl = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+        window.open(blobUrl, '_blank', 'noopener');
+        // Keep the blob alive long enough for the new tab to load.
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+      } catch (error) {
+        console.warn(error);
+        showBanner('Could not open the original HTML page.');
+      }
+    }
+
+    /**
+     * Fetches HTML text from a URL and rejects empty responses.
+     * @param {string} url Public URL of the HTML document.
+     * @returns {Promise<string>}
+     */
+    async function fetchHtmlDocument(url) {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Failed to fetch HTML (${response.status})`);
+      const html = await response.text();
+      if (!html.trim()) throw new Error('Empty HTML response');
+      return html;
     }
 
     function openEdit(groupId) {
